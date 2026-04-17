@@ -82,22 +82,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const syncAndFetch = async (currentSession: Session) => {
     try {
-      // 1. Fetch initial cloud data first to check if we need migration
       const { data: cloudStudents } = await supabase
         .from('students')
         .select('id')
         .eq('coach_id', currentSession.user.id)
         .limit(1);
 
-      // 2. Local to Cloud Migration (Sync) - Only if cloud is empty
       const localStudents = localStorage.getItem('kickoff_students');
       if (localStudents && (!cloudStudents || cloudStudents.length === 0)) {
         const parsed: Student[] = JSON.parse(localStudents);
         if (parsed.length > 0) {
-          const toUpload = parsed.map(s => {
-            const { id, ...rest } = s; 
-            return { ...rest, coach_id: currentSession.user.id };
-          });
+          const toUpload = parsed.map(s => ({
+            coach_id: currentSession.user.id,
+            name: s.name,
+            contact: s.contact,
+            dob: s.dob,
+            position: s.position,
+            goal: s.goal,
+            lesson_type: s.lessonType,
+            total_sessions: s.totalSessions,
+            remaining_sessions: s.remainingSessions,
+            payment_status: s.paymentStatus,
+            team: s.team,
+            price_per_lesson: s.pricePerLesson,
+            preferred_foot: s.preferredFoot,
+            lesson_location: s.lessonLocation,
+            elite_status: s.eliteStatus || s.goal,
+            payment_date: s.paymentDate,
+            depositor_name: s.depositorName
+          }));
           await supabase.from('students').insert(toUpload);
           localStorage.removeItem('kickoff_students');
           localStorage.removeItem('kickoff_logs');
@@ -106,7 +119,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await fetchData();
     } catch (err) {
       console.error('Initial sync failed:', err);
-      // Still try to fetch data even if sync fails
       await fetchData();
     }
   };
