@@ -1,0 +1,16 @@
+{
+  "short_name": "Kick-Off",
+  "name": "Kick-Off: Anti-gravity Soccer SaaS",
+  "icons": [
+    {
+      "src": "kick_off_logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0A0A0B",
+  "background_color": "#0A0A0B"
+}
