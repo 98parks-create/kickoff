@@ -133,7 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })));
       }
       if (logsData) {
-        setLogs(logsData.map(l => ({ ...l, isInjury: l.is_injury })));
+        setLogs(logsData.map(l => ({ ...l, studentId: l.student_id, isInjury: l.is_injury })));
       }
     } catch (err) {
       console.error('Data fetch failed:', err);
