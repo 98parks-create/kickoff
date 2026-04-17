@@ -231,6 +231,7 @@ const StudentDetailModal: React.FC<Props> = ({ student, onClose }) => {
         </div>
 
         <section style={{ marginTop: '3rem' }}>
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             코멘트 이력
             <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>{studentLogs.length}건</span>
             <button 
