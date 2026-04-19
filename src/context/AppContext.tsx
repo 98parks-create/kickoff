@@ -65,18 +65,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
 
   useEffect(() => {
+    let cleanupSubs: (() => void) | null = null;
+
     // 1. Auth Listener with safety timeout
     const loadTimeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // Fail safe: stop loading after 5 seconds
+    }, 5000);
 
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         setSession(session);
-        if (session) syncAndFetch(session);
-      })
-      .catch(err => {
-        console.error('Auth boot failed:', err);
+        if (session) {
+          syncAndFetch(session);
+          cleanupSubs = setupSubscriptions(session.user.id);
+        }
       })
       .finally(() => {
         clearTimeout(loadTimeout);
@@ -85,8 +87,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (cleanupSubs) cleanupSubs();
       if (session) {
         syncAndFetch(session);
+        cleanupSubs = setupSubscriptions(session.user.id);
       } else {
         setStudents([]);
         setLogs([]);
@@ -95,9 +99,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => {
       subscription.unsubscribe();
+      if (cleanupSubs) cleanupSubs();
       clearTimeout(loadTimeout);
     };
   }, []);
+
+  const setupSubscriptions = (userId: string) => {
+    const studentSub = supabase
+      .channel(`students-${userId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'students',
+        filter: `coach_id=eq.${userId}`
+      }, () => fetchData())
+      .subscribe();
+
+    const logSub = supabase
+      .channel(`logs-${userId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'attendance_logs',
+        filter: `coach_id=eq.${userId}`
+      }, () => fetchData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(studentSub);
+      supabase.removeChannel(logSub);
+    };
+  };
 
   const syncAndFetch = async (currentSession: Session) => {
     try {

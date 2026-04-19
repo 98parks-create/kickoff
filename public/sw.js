@@ -23,6 +23,14 @@ self.addEventListener('activate', (event) => {
 
 // Network-First for ALL navigation requests to ensure 404s on refresh are handled by the server
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // 1. Bypass Service Worker for Supabase API calls to ensure real-time data
+  if (url.hostname.includes('supabase.co')) {
+    return; // Let it go directly to the network
+  }
+
+  // 2. Navigation requests: Network-First
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('/index.html'))
@@ -30,6 +38,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 3. Static assets: Cache-First
   event.respondWith(
     caches.match(event.request).then((res) => res || fetch(event.request))
   );
