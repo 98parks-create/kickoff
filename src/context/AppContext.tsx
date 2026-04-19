@@ -135,7 +135,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchData = async () => {
     if (!session) return;
     try {
-      // 1. Strict filtering: only fetch students belonging to THIS coach
+      // 1. Individual Account Isolation: Only fetch data where coach_id matches current user
       const { data: studentsData, error: sError } = await supabase
         .from('students')
         .select('*')
@@ -182,16 +182,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const syncAndFetch = async (currentSession: Session) => {
     try {
-      // 1. Repair/Migration: Claim any students that have NO coach_id
-      // This restores data that was created before individual accounts were enforced
+      // 1. Data Restoration: Claim any records without a coach_id for this session
+      // This handles cases where data was stored before the strict account filter was added.
       const { data: orphans } = await supabase
         .from('students')
         .select('id')
         .is('coach_id', null);
       
       if (orphans && orphans.length > 0) {
-        console.log(`Restoring ${orphans.length} orphaned records...`);
-        // We update them ONE BY ONE if RLS is strict, but a mass update is faster if allowed
+        console.log(`Associating ${orphans.length} previous records with your account...`);
         await supabase
           .from('students')
           .update({ coach_id: currentSession.user.id })
@@ -203,18 +202,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .is('coach_id', null);
       }
 
-      // 2. LocalStorage Sync if needed
+      // 2. Local-to-Cloud Merge: If user had local data on this PC, make sure it's in their account
       const { data: cloudStudents } = await supabase
         .from('students')
-        .select('id')
-        .eq('coach_id', currentSession.user.id)
-        .limit(1);
+        .select('id, name, contact')
+        .eq('coach_id', currentSession.user.id);
 
-      const localStudents = localStorage.getItem('kickoff_students');
-      if (localStudents && (!cloudStudents || cloudStudents.length === 0)) {
-        const parsed: Student[] = JSON.parse(localStudents);
-        if (parsed.length > 0) {
-          const toUpload = parsed.map(s => ({
+      const localStudentsStr = localStorage.getItem('kickoff_students');
+      if (localStudentsStr) {
+        const localStudents: Student[] = JSON.parse(localStudentsStr);
+        // Find local students not yet in the cloud for this user
+        const toUpload = localStudents.filter(ls => 
+          !cloudStudents?.some(cs => cs.name === ls.name && cs.contact === ls.contact)
+        );
+
+        if (toUpload.length > 0) {
+          console.log(`Merging ${toUpload.length} local records to your cloud account...`);
+          const mappedUpload = toUpload.map(s => ({
             coach_id: currentSession.user.id,
             name: s.name,
             contact: s.contact,
@@ -235,14 +239,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             age_category: s.ageCategory,
             inflow_route: s.inflowRoute
           }));
-          await supabase.from('students').insert(toUpload);
-          localStorage.removeItem('kickoff_students');
-          localStorage.removeItem('kickoff_logs');
+          await supabase.from('students').insert(mappedUpload);
         }
+        // Once merged, clear local storage to prefer cloud truth
+        localStorage.removeItem('kickoff_students');
+        localStorage.removeItem('kickoff_logs');
       }
+
       await fetchData();
     } catch (err) {
-      console.error('Initial sync failed:', err);
+      console.error('Core sync failed:', err);
       await fetchData();
     }
   };
