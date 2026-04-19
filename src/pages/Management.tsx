@@ -215,21 +215,22 @@ const Management: React.FC = () => {
 
       {/* 1. Summary Table Section */}
       <section className="glass" style={{ borderRadius: '1.5rem', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-        <div style={{ overflowX: 'auto' }}>
+        {/* Desktop Table View */}
+        <div className="desktop-view" style={{ overflowX: 'auto' }}>
           <table className="management-table">
             <thead>
               <tr>
-                <th style={{ width: '4%' }}>#</th>
-                <th style={{ width: '12%' }}>선수<span className="mobile-hide-text"> 이름</span></th>
-                <th style={{ width: '10%', minWidth: '40px' }}>소속</th>
-                <th style={{ width: '8%' }}>연령</th>
-                <th style={{ width: '8%' }}>유입</th>
-                <th style={{ width: '10%' }}>단가</th>
-                <th style={{ width: '6%' }}>참<span className="mobile-hide-text">여</span></th>
-                <th style={{ width: '6%' }}>결<span className="mobile-hide-text">제</span></th>
-                <th style={{ width: '13%' }}>수입</th>
-                <th style={{ width: '13%' }}>미수<span className="mobile-hide-text">금</span></th>
-                <th style={{ textAlign: 'center', width: '10%' }}>관<span className="mobile-hide-text">리</span></th>
+                <th style={{ width: '60px' }}>순번</th>
+                <th style={{ minWidth: '100px' }}>선수 이름</th>
+                <th style={{ minWidth: '120px' }}>소속</th>
+                <th style={{ width: '80px' }}>연령</th>
+                <th style={{ width: '100px' }}>유입</th>
+                <th style={{ minWidth: '110px' }}>단가</th>
+                <th style={{ width: '60px' }}>참여</th>
+                <th style={{ width: '60px' }}>결제</th>
+                <th style={{ minWidth: '120px' }}>수입</th>
+                <th style={{ minWidth: '120px' }}>미수금</th>
+                <th style={{ textAlign: 'center', width: '100px' }}>관리</th>
               </tr>
             </thead>
             <tbody>
@@ -274,7 +275,7 @@ const Management: React.FC = () => {
                   </td>
                 </tr>
               )}
-              {/* Total Row (Based on filtered search, not just page) */}
+              {/* Total Row */}
               <tr style={{ background: 'rgba(34, 197, 94, 0.05)', fontWeight: 800 }}>
                 <td colSpan={8} style={{ textAlign: 'right', color: 'var(--muted)', padding: '1.25rem' }}>검색/필터 결과 총계</td>
                 <td style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>₩{totals.revenue.toLocaleString()}</td>
@@ -283,6 +284,77 @@ const Management: React.FC = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="mobile-view" style={{ padding: '1rem' }}>
+          {paginatedData.map((student, idx) => (
+            <div key={student.id} className="mobile-card">
+              <div className="mobile-card-header">
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>#{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</span>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: '0.2rem' }}>{student.name} <span style={{ fontWeight: 400, fontSize: '0.9rem', color: 'var(--muted)' }}>({student.team || '-'})</span></h4>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => setEditingStudent(student)} className="glass" style={{ padding: '0.6rem', borderRadius: '0.75rem', border: 'none', color: 'var(--muted)' }}><Edit2 size={16} /></button>
+                    <button onClick={() => handleDelete(student.id, student.name)} className="glass" style={{ padding: '0.6rem', borderRadius: '0.75rem', border: 'none', color: '#EF4444' }}><Trash2 size={16} /></button>
+                </div>
+              </div>
+              
+              <div className="mobile-card-grid">
+                <div className="mobile-card-item">
+                  <label>연령 / 유입</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <span className="badge badge-yellow">{student.ageCategory || 'U15'}</span>
+                    <span className="badge badge-green">{student.inflowRoute || '소개'}</span>
+                  </div>
+                </div>
+                <div className="mobile-card-item">
+                  <label>레슨 단가</label>
+                  <span>₩{(student.pricePerLesson || 0).toLocaleString()}</span>
+                </div>
+                <div className="mobile-card-item">
+                  <label>참여 / 결제</label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <span style={{ color: 'var(--primary)' }}>참여: {student.attendanceCount}</span>
+                    <span style={{ color: 'var(--accent)' }}>결제: {student.paymentCount}</span>
+                  </div>
+                </div>
+                <div className="mobile-card-item">
+                  <label>당월 수입</label>
+                  <span style={{ color: 'var(--primary)' }}>₩{student.revenue.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="mobile-card-footer">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--muted)', textTransform: 'uppercase' }}>미수금</label>
+                    <span style={{ color: student.unpaidAmount > 0 ? '#EF4444' : 'var(--muted)', fontSize: '1.1rem' }}>
+                        ₩{student.unpaidAmount.toLocaleString()}
+                    </span>
+                </div>
+                {student.remainingSessions <= 2 && (
+                    <span className="badge badge-red" style={{ animation: 'pulse 2s infinite' }}>재등록 대상</span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {paginatedData.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>결과가 없습니다.</div>
+          )}
+
+          {/* Mobile Total Section */}
+          <div className="premium-card" style={{ marginTop: '1.5rem', background: 'rgba(34, 197, 94, 0.05)', borderStyle: 'dashed' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>총 수입</span>
+              <span style={{ color: 'var(--primary)', fontWeight: 800 }}>₩{totals.revenue.toLocaleString()}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>총 미수금</span>
+              <span style={{ color: '#EF4444', fontWeight: 800 }}>₩{totals.unpaid.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
 
         {/* Pagination Controls */}
@@ -364,62 +436,92 @@ const Management: React.FC = () => {
         }
         .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
 
+        /* Table Styles (Restored for Desktop) */
         .management-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 0.85rem;
-          table-layout: fixed; /* Fix table layout for predictable column widths */
         }
         .management-table th, .management-table td {
-          padding: 1.1rem 0.5rem;
+          padding: 1.1rem 0.75rem;
           text-align: left;
           border-bottom: 1px solid var(--glass-border);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
         }
         .management-table th {
           background: rgba(255,255,255,0.02);
           color: var(--muted);
           font-weight: 700;
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
 
-        @media (max-width: 850px) {
-          .management-page {
-            padding: 0.5rem;
-          }
-          .management-table {
-            font-size: 0.7rem;
-          }
-          .management-table th, .management-table td {
-            padding: 0.6rem 0.2rem; /* Extreme tight padding */
-          }
-          .management-table th {
-            font-size: 0.6rem;
-          }
-          .badge {
-            padding: 0.1rem 0.3rem;
-            font-size: 0.55rem;
-          }
-        }
+        /* Mobile Utility Classes */
+        .desktop-view { display: block; }
+        .mobile-view { display: none; }
 
-        @media (max-width: 600px) {
+        @media (max-width: 850px) {
+          .desktop-view { display: none; }
+          .mobile-view { display: block; }
+          
+          .management-page {
+            padding: 0.75rem;
+          }
+          
+          .mobile-card {
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+          }
+          
+          .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+          }
+          
+          .mobile-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+          }
+          
+          .mobile-card-item label {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--muted);
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+          }
+          
+          .mobile-card-item span {
+            font-weight: 700;
+            font-size: 0.85rem;
+          }
+
+          .mobile-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.75rem;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+          }
+
           .header-row {
             flex-direction: column;
             align-items: stretch !important;
+            gap: 1rem;
           }
           .filter-search-container {
             flex-direction: column;
             align-items: stretch !important;
-          }
-          .management-table {
-            font-size: 0.65rem;
-          }
-          .mobile-hide-text {
-            display: none;
           }
         }
 
