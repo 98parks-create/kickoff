@@ -22,7 +22,9 @@ const PaymentHub: React.FC = () => {
   // Financial Logic for the Selected Month
   const accountingData = useMemo(() => {
     const monthLogs = logs.filter(log => {
-      const logDate = new Date(log.date);
+      // Normalize date string for robust cross-browser parsing (WebKit/iOS fix)
+      const normalizedDate = log.date.replace(/\. /g, '-').replace(/\.$/, '').replace(/\./g, '-');
+      const logDate = new Date(normalizedDate);
       return logDate.getMonth() === month && logDate.getFullYear() === year;
     });
 

@@ -173,9 +173,9 @@ const MonthlyChecklistModal: React.FC<Props> = ({
               <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const dateStr = `${year}. ${month + 1}. ${day}.`;
-                  const attendLog = logs.find(l => l.studentId === selectedStudentId && l.date === dateStr && l.type === 'attendance');
-                  const paymentLog = logs.find(l => l.studentId === selectedStudentId && l.date === dateStr && l.type === 'payment');
+                  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const attendLog = logs.find(l => l.studentId === selectedStudentId && (l.date === dateStr || l.date.replace(/\. /g, '-').replace(/\.$/, '') === dateStr) && l.type === 'attendance');
+                  const paymentLog = logs.find(l => l.studentId === selectedStudentId && (l.date === dateStr || l.date.replace(/\. /g, '-').replace(/\.$/, '') === dateStr) && l.type === 'payment');
 
                   return (
                     <div 

@@ -177,9 +177,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const fetchData = async () => {
+    if (!session) return;
     try {
-      const { data: studentsData } = await supabase.from('students').select('*').order('created_at', { ascending: false });
-      const { data: logsData } = await supabase.from('attendance_logs').select('*').order('created_at', { ascending: false });
+      const { data: studentsData } = await supabase
+        .from('students')
+        .select('*')
+        .eq('coach_id', session.user.id)
+        .order('created_at', { ascending: false });
+      
+      const { data: logsData } = await supabase
+        .from('attendance_logs')
+        .select('*')
+        .eq('coach_id', session.user.id)
+        .order('created_at', { ascending: false });
       
       if (studentsData) {
         setStudents(studentsData.map(s => ({
@@ -269,11 +279,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }).eq('id', studentId);
 
     // 2. Add Log
+    const now = new Date();
     await supabase.from('attendance_logs').insert({
       student_id: studentId,
       coach_id: session.user.id,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString(),
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().split(' ')[0],
       comment,
       is_injury: isInjury
     });
@@ -328,11 +339,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addComment = async (studentId: string, comment: string) => {
     if (!session) return;
+    const now = new Date();
     await supabase.from('attendance_logs').insert({
       student_id: studentId,
       coach_id: session.user.id,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString(),
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().split(' ')[0],
       comment
     });
     fetchData();
@@ -349,7 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         student_id: studentId,
         coach_id: session.user.id,
         date,
-        time: new Date().toLocaleTimeString(),
+        time: new Date().toTimeString().split(' ')[0],
         type,
         comment: type === 'attendance' ? '출석 체크' : '결제 체크'
       });

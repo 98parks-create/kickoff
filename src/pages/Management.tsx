@@ -47,12 +47,16 @@ const Management: React.FC = () => {
         
         // Monthly stats
         const monthlyAttendance = studentAttendLogs.filter(l => {
-            const logDate = new Date(l.date);
+            // Normalize for cross-browser parsing
+            const normalizedDate = l.date.replace(/\. /g, '-').replace(/\.$/, '').replace(/\./g, '-');
+            const logDate = new Date(normalizedDate);
             return logDate.getMonth() === month && logDate.getFullYear() === year;
         }).length;
         
         const monthlyPayment = studentPayLogs.filter(l => {
-            const logDate = new Date(l.date);
+            // Normalize for cross-browser parsing
+            const normalizedDate = l.date.replace(/\. /g, '-').replace(/\.$/, '').replace(/\./g, '-');
+            const logDate = new Date(normalizedDate);
             return logDate.getMonth() === month && logDate.getFullYear() === year;
         }).length;
 
@@ -316,10 +320,14 @@ const Management: React.FC = () => {
               <div className="mobile-card-grid">
                 <div className="mobile-card-item">
                   <label>연령 / 유입</label>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    <span className="badge badge-yellow">{student.ageCategory || 'U15'}</span>
-                    <span className="badge badge-green">{student.inflowRoute || '소개'}</span>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                    <span className="badge badge-yellow" style={{ fontSize: '0.65rem' }}>{student.ageCategory || 'U15'}</span>
+                    <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>{student.inflowRoute || '소개'}</span>
                   </div>
+                </div>
+                <div className="mobile-card-item">
+                  <label>레슨 단가</label>
+                  <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.9rem' }}>₩{(student.pricePerLesson || 0).toLocaleString()}</span>
                 </div>
                 <div className="mobile-card-item">
                   <label>당월 참여 / 결제</label>
