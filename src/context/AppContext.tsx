@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 
@@ -177,34 +177,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const fetchData = async () => {
-    if (!session) {
-      console.warn('No session, skipping fetch');
-      return;
-    }
+    if (!session) return;
     try {
-      // 1. Emergency: Fetch EVERYTHING from the table without any filters or ordering to ensure no data is missed
+      // 1. Strict filtering: only fetch students belonging to THIS coach
       const { data: studentsData, error: sError } = await supabase
         .from('students')
-        .select('*');
+        .select('*')
+        .eq('coach_id', session.user.id)
+        .order('created_at', { ascending: false });
       
       const { data: logsData, error: lError } = await supabase
         .from('attendance_logs')
-        .select('*');
+        .select('*')
+        .eq('coach_id', session.user.id)
+        .order('created_at', { ascending: false });
 
       if (sError) console.error('Student fetch error:', sError);
       if (lError) console.error('Logs fetch error:', lError);
       
       if (studentsData) {
-        // 2. Self-Healing: If any record is missing the coach_id, assign it to the current coach
-        // This ensures they appear in filtered views later and stay synced across devices
-        const orphans = studentsData.filter(s => !s.coach_id);
-        if (orphans.length > 0) {
-          console.log(`Repairing ${orphans.length} orphaned student records...`);
-          await Promise.all(orphans.map(s => 
-            supabase.from('students').update({ coach_id: session.user.id }).eq('id', s.id)
-          ));
-        }
-
         setStudents(studentsData.map(s => ({
           ...s,
           joinedDate: s.joined_date || s.created_at,
@@ -224,20 +215,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (logsData) {
-        // Self-heal logs too
-        const orphanLogs = logsData.filter(l => !l.coach_id);
-        if (orphanLogs.length > 0) {
-          console.log(`Repairing ${orphanLogs.length} orphaned log records...`);
-          await Promise.all(orphanLogs.map(l => 
-            supabase.from('attendance_logs').update({ coach_id: session.user.id }).eq('id', l.id)
-          ));
-        }
         setLogs(logsData.map(l => ({ ...l, studentId: l.student_id, isInjury: l.is_injury })));
       }
     } catch (err) {
-      console.error('CRITICAL: Data fetch failed:', err);
+      console.error('Data fetch failed:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncAndFetch = async (currentSession: Session) => {
+    try {
+      // 1. Repair/Migration: Claim any students that have NO coach_id
+      // This restores data that was created before individual accounts were enforced
+      const { data: orphans } = await supabase
+        .from('students')
+        .select('id')
+        .is('coach_id', null);
+      
+      if (orphans && orphans.length > 0) {
+        console.log(`Restoring ${orphans.length} orphaned records...`);
+        // We update them ONE BY ONE if RLS is strict, but a mass update is faster if allowed
+        await supabase
+          .from('students')
+          .update({ coach_id: currentSession.user.id })
+          .is('coach_id', null);
+        
+        await supabase
+          .from('attendance_logs')
+          .update({ coach_id: currentSession.user.id })
+          .is('coach_id', null);
+      }
+
+      // 2. LocalStorage Sync if needed
+      const { data: cloudStudents } = await supabase
+        .from('students')
+        .select('id')
+        .eq('coach_id', currentSession.user.id)
+        .limit(1);
+
+      const localStudents = localStorage.getItem('kickoff_students');
+      if (localStudents && (!cloudStudents || cloudStudents.length === 0)) {
+        const parsed: Student[] = JSON.parse(localStudents);
+        if (parsed.length > 0) {
+          const toUpload = parsed.map(s => ({
+            coach_id: currentSession.user.id,
+            name: s.name,
+            contact: s.contact,
+            dob: s.dob,
+            position: s.position,
+            goal: s.goal,
+            lesson_type: s.lessonType,
+            total_sessions: s.totalSessions,
+            remaining_sessions: s.remainingSessions,
+            payment_status: s.paymentStatus,
+            team: s.team,
+            price_per_lesson: s.pricePerLesson,
+            preferred_foot: s.preferredFoot,
+            lesson_location: s.lessonLocation,
+            elite_status: s.eliteStatus || s.goal,
+            payment_date: s.paymentDate,
+            depositor_name: s.depositorName,
+            age_category: s.ageCategory,
+            inflow_route: s.inflowRoute
+          }));
+          await supabase.from('students').insert(toUpload);
+          localStorage.removeItem('kickoff_students');
+          localStorage.removeItem('kickoff_logs');
+        }
+      }
+      await fetchData();
+    } catch (err) {
+      console.error('Initial sync failed:', err);
+      await fetchData();
     }
   };
 
