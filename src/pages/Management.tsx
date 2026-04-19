@@ -219,17 +219,17 @@ const Management: React.FC = () => {
           <table className="management-table">
             <thead>
               <tr>
-                <th style={{ width: '60px' }}>순번</th>
-                <th style={{ minWidth: '100px' }}>선수 이름</th>
-                <th style={{ minWidth: '120px' }}>소속</th>
-                <th style={{ width: '80px' }}>연령</th>
-                <th style={{ width: '100px' }}>유입</th>
-                <th style={{ minWidth: '110px' }}>단가</th>
-                <th style={{ width: '60px' }}>참여</th>
-                <th style={{ width: '60px' }}>결제</th>
-                <th style={{ minWidth: '120px' }}>수입</th>
-                <th style={{ minWidth: '120px' }}>미수금</th>
-                <th style={{ textAlign: 'center', width: '100px' }}>관리</th>
+                <th style={{ width: '4%' }}>#</th>
+                <th style={{ width: '12%' }}>선수<span className="mobile-hide-text"> 이름</span></th>
+                <th style={{ width: '10%', minWidth: '40px' }}>소속</th>
+                <th style={{ width: '8%' }}>연령</th>
+                <th style={{ width: '8%' }}>유입</th>
+                <th style={{ width: '10%' }}>단가</th>
+                <th style={{ width: '6%' }}>참<span className="mobile-hide-text">여</span></th>
+                <th style={{ width: '6%' }}>결<span className="mobile-hide-text">제</span></th>
+                <th style={{ width: '13%' }}>수입</th>
+                <th style={{ width: '13%' }}>미수<span className="mobile-hide-text">금</span></th>
+                <th style={{ textAlign: 'center', width: '10%' }}>관<span className="mobile-hide-text">리</span></th>
               </tr>
             </thead>
             <tbody>
@@ -368,11 +368,15 @@ const Management: React.FC = () => {
           width: 100%;
           border-collapse: collapse;
           font-size: 0.85rem;
+          table-layout: fixed; /* Fix table layout for predictable column widths */
         }
         .management-table th, .management-table td {
           padding: 1.1rem 0.5rem;
           text-align: left;
           border-bottom: 1px solid var(--glass-border);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .management-table th {
           background: rgba(255,255,255,0.02);
@@ -382,34 +386,27 @@ const Management: React.FC = () => {
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
-        .management-table tr:hover td {
-          background: rgba(255,255,255,0.01);
-        }
 
         @media (max-width: 850px) {
           .management-page {
             padding: 0.5rem;
           }
           .management-table {
-            font-size: 0.75rem;
-          }
-          /* Hide non-essential columns on smaller screens to prevent scroll */
-          .management-table th:nth-child(4), .management-table td:nth-child(4), /* Age */
-          .management-table th:nth-child(5), .management-table td:nth-child(5)  /* Inflow */ {
-            display: none;
+            font-size: 0.7rem;
           }
           .management-table th, .management-table td {
-            padding: 0.8rem 0.4rem;
+            padding: 0.6rem 0.2rem; /* Extreme tight padding */
+          }
+          .management-table th {
+            font-size: 0.6rem;
+          }
+          .badge {
+            padding: 0.1rem 0.3rem;
+            font-size: 0.55rem;
           }
         }
 
         @media (max-width: 600px) {
-          .management-table th:nth-child(3), .management-table td:nth-child(3) /* Team */ {
-            display: none;
-          }
-          .management-table th:nth-child(6), .management-table td:nth-child(6) /* Price */ {
-            display: none;
-          }
           .header-row {
             flex-direction: column;
             align-items: stretch !important;
@@ -417,6 +414,12 @@ const Management: React.FC = () => {
           .filter-search-container {
             flex-direction: column;
             align-items: stretch !important;
+          }
+          .management-table {
+            font-size: 0.65rem;
+          }
+          .mobile-hide-text {
+            display: none;
           }
         }
 
