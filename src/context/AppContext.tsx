@@ -131,50 +131,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  const syncAndFetch = async (currentSession: Session) => {
-    try {
-      const { data: cloudStudents } = await supabase
-        .from('students')
-        .select('id')
-        .eq('coach_id', currentSession.user.id)
-        .limit(1);
-
-      const localStudents = localStorage.getItem('kickoff_students');
-      if (localStudents && (!cloudStudents || cloudStudents.length === 0)) {
-        const parsed: Student[] = JSON.parse(localStudents);
-        if (parsed.length > 0) {
-          const toUpload = parsed.map(s => ({
-            coach_id: currentSession.user.id,
-            name: s.name,
-            contact: s.contact,
-            dob: s.dob,
-            position: s.position,
-            goal: s.goal,
-            lesson_type: s.lessonType,
-            total_sessions: s.totalSessions,
-            remaining_sessions: s.remainingSessions,
-            payment_status: s.paymentStatus,
-            team: s.team,
-            price_per_lesson: s.pricePerLesson,
-            preferred_foot: s.preferredFoot,
-            lesson_location: s.lessonLocation,
-            elite_status: s.eliteStatus || s.goal,
-            payment_date: s.paymentDate,
-            depositor_name: s.depositorName,
-            age_category: s.ageCategory,
-            inflow_route: s.inflowRoute
-          }));
-          await supabase.from('students').insert(toUpload);
-          localStorage.removeItem('kickoff_students');
-          localStorage.removeItem('kickoff_logs');
-        }
-      }
-      await fetchData();
-    } catch (err) {
-      console.error('Initial sync failed:', err);
-      await fetchData();
-    }
-  };
 
   const fetchData = async () => {
     if (!session) return;
