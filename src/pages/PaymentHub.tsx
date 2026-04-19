@@ -1,14 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, Trash2, Search, Calendar, User, TrendingUp, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { Clock, Search, Calendar, User, TrendingUp, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 
 const PaymentHub: React.FC = () => {
-  const { students, logs, confirmPayment, resetPayment } = useAppContext();
+  const { students, logs } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'All' | 'Paid' | 'Pending'>('All');
-  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
-  const [depositorName, setDepositorName] = useState('');
   
   // Month Selection for Accounting
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -54,21 +51,9 @@ const PaymentHub: React.FC = () => {
   }, [accountingData]);
 
   const filteredStudents = accountingData.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (s.depositorName && s.depositorName.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = filterStatus === 'All' || s.paymentStatus === filterStatus;
-    return matchesSearch && matchesStatus;
+    return s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           (s.team && s.team.toLowerCase().includes(searchTerm.toLowerCase()));
   });
-
-  const handleConfirm = async (id: string) => {
-    if (!depositorName) {
-      alert('입금자 성명을 입력해주세요.');
-      return;
-    }
-    await confirmPayment(id, depositorName);
-    setEditingPaymentId(null);
-    setDepositorName('');
-  };
 
   return (
     <div className="payment-hub" style={{ color: '#fff' }}>
@@ -144,32 +129,13 @@ const PaymentHub: React.FC = () => {
         <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
           <Search size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}/>
           <input 
-            placeholder="선수 이름 또는 입금자명 검색..."
+            placeholder="선수 이름 또는 소속 검색..."
             className="glass"
             style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '1.25rem', border: '1px solid var(--glass-border)', color: '#fff', fontSize: '0.95rem' }}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <select 
-          className="glass" 
-          style={{ 
-            padding: '1rem 1.5rem', 
-            borderRadius: '1.25rem', 
-            border: '1px solid var(--glass-border)', 
-            color: '#fff', 
-            background: '#1a1a1c', /* Fix invisible text bug */
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600
-          }}
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value as any)}
-        >
-          <option value="All" style={{ background: '#1a1a1c' }}>입금 전체</option>
-          <option value="Paid" style={{ background: '#1a1a1c' }}>입금완료 전용</option>
-          <option value="Pending" style={{ background: '#1a1a1c' }}>입금대기 전용</option>
-        </select>
       </div>
 
       {/* Payment List */}
@@ -185,9 +151,6 @@ const PaymentHub: React.FC = () => {
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{student.name}</h3>
-                  <span className={`badge ${student.paymentStatus === 'Paid' ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '0.75rem' }}>
-                    {student.paymentStatus === 'Paid' ? '정기입금완료' : '입금대기'}
-                  </span>
                   <span className="badge" style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', color: 'var(--muted)' }}>{student.lessonType === 'Private' ? '개인' : '그룹'}</span>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--muted)', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
@@ -233,65 +196,7 @@ const PaymentHub: React.FC = () => {
               </div>
             </div>
 
-            {student.paymentStatus === 'Pending' ? (
-              <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
-                {editingPaymentId === student.id ? (
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <input 
-                      autoFocus
-                      placeholder="입금자 성명 입력 (예: 부모님 성함)"
-                      className="glass"
-                      style={{ flex: 1, padding: '0.8rem 1rem', borderRadius: '0.75rem', fontSize: '0.9rem', color: '#fff' }}
-                      value={depositorName}
-                      onChange={e => setDepositorName(e.target.value)}
-                    />
-                    <button 
-                      onClick={() => handleConfirm(student.id)}
-                      className="btn-primary" 
-                      style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem' }}
-                    >
-                      확약하기
-                    </button>
-                    <button 
-                      onClick={() => setEditingPaymentId(null)}
-                      className="glass" 
-                      style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem', border: 'none' }}
-                    >
-                      취소
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => { setEditingPaymentId(student.id); setDepositorName(student.name); }}
-                    className="btn-primary" 
-                    style={{ width: '100%', padding: '0.8rem', fontSize: '0.9rem', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: 800 }}
-                  >
-                    입금 정보 확인 및 처리
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ 
-                borderTop: '1px solid var(--glass-border)', 
-                paddingTop: '1.25rem', 
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '0.9rem'
-              }}>
-                <div style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <CheckCircle size={16} color="var(--primary)" />
-                  <span>입금자: <strong style={{ color: '#fff' }}>{student.depositorName}</strong></span>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>({new Date(student.paymentDate!).toLocaleDateString()} 입금)</span>
-                </div>
-                <button 
-                  onClick={async () => await resetPayment(student.id)}
-                  style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', fontSize: '0.75rem', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                >
-                  <Trash2 size={14} /> 기록 취소
-                </button>
-              </div>
-            )}
+
           </motion.div>
         ))}
 

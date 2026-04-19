@@ -216,7 +216,7 @@ const Management: React.FC = () => {
           style={{ padding: '0.6rem 1.25rem', fontSize: '0.9rem', borderRadius: '0.875rem' }}
         >
           <CheckSquare size={18} />
-          {month + 1}월 출석 관리
+          {month + 1}월 출석/결제 관리
         </button>
       </div>
 
