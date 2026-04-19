@@ -39,11 +39,6 @@ const Management: React.FC = () => {
 
   // Data processing for the selected month
   const gridData = useMemo(() => {
-    const monthLogs = logs.filter(log => {
-      const logDate = new Date(log.date);
-      return logDate.getMonth() === month && logDate.getFullYear() === year;
-    });
-
     return students
       .filter(s => s.lessonType === view)
       .map(student => {
