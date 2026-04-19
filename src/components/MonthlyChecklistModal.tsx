@@ -182,31 +182,36 @@ const MonthlyChecklistModal: React.FC<Props> = ({
                        key={day} 
                        className="glass"
                        style={{ 
-                          padding: '1rem', 
-                          marginBottom: '0.5rem', 
+                          padding: '1.25rem 1rem', 
+                          marginBottom: '0.75rem', 
                           display: 'flex', 
                           alignItems: 'center', 
                           justifyContent: 'space-between', 
-                          borderRadius: '1rem',
-                          border: '1px solid rgba(255,255,255,0.05)'
+                          borderRadius: '1.25rem',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: 'rgba(255,255,255,0.02)'
                        }}
                     >
-                      <div style={{ width: '80px', fontWeight: 800, fontSize: '0.95rem' }}>{day}일</div>
-                      <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ width: '60px', fontWeight: 900, fontSize: '1.1rem', color: '#fff' }}>{day}일</div>
+                      <div style={{ display: 'flex', gap: '1.5rem' }}>
                         <button 
                            onClick={() => recordGridCheck(selectedStudentId, dateStr, 'attendance', !attendLog)}
                            style={{ 
                               display: 'flex', 
                               flexDirection: 'column', 
                               alignItems: 'center', 
-                              gap: '0.25rem',
-                              background: 'none',
+                              gap: '0.4rem',
+                              background: attendLog ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.05)',
                               border: 'none',
-                              color: attendLog ? 'var(--primary)' : 'rgba(255,255,255,0.1)'
+                              padding: '0.6rem',
+                              borderRadius: '1rem',
+                              color: attendLog ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+                              width: '64px',
+                              transition: 'all 0.2s ease'
                            }}
                         >
-                           {attendLog ? <CheckCircle2 size={28} /> : <Circle size={28} />}
-                           <span style={{ fontSize: '0.65rem' }}>출석</span>
+                           {attendLog ? <CheckCircle2 size={32} /> : <Circle size={32} />}
+                           <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>출석</span>
                         </button>
                         <button 
                            onClick={() => recordGridCheck(selectedStudentId, dateStr, 'payment', !paymentLog)}
@@ -214,14 +219,18 @@ const MonthlyChecklistModal: React.FC<Props> = ({
                               display: 'flex', 
                               flexDirection: 'column', 
                               alignItems: 'center', 
-                              gap: '0.25rem',
-                              background: 'none',
+                              gap: '0.4rem',
+                              background: paymentLog ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255,255,255,0.05)',
                               border: 'none',
-                              color: paymentLog ? 'var(--accent)' : 'rgba(255,255,255,0.1)'
+                              padding: '0.6rem',
+                              borderRadius: '1rem',
+                              color: paymentLog ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
+                              width: '64px',
+                              transition: 'all 0.2s ease'
                            }}
                         >
-                           {paymentLog ? <Wallet size={28} /> : <Circle size={28} />}
-                           <span style={{ fontSize: '0.65rem' }}>결제</span>
+                           {paymentLog ? <Wallet size={32} /> : <Circle size={32} />}
+                           <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>결제</span>
                         </button>
                       </div>
                     </div>
