@@ -138,8 +138,10 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginWrapper />} />
       <Route path="/" element={<AuthWrapper><Management /></AuthWrapper>} />
+      <Route path="/management" element={<Navigate to="/" replace />} />
       <Route path="/onboarding" element={<AuthWrapper><Onboarding /></AuthWrapper>} />
       <Route path="/payments" element={<AuthWrapper><PaymentHub /></AuthWrapper>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
