@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 
@@ -177,31 +177,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const fetchData = async () => {
-    if (!session) return;
+    if (!session) {
+      console.warn('No session, skipping fetch');
+      return;
+    }
     try {
-      // 1. Fetch all for now to restore visibility
-      const { data: studentsData } = await supabase
+      // 1. Emergency: Fetch EVERYTHING from the table without any filters or ordering to ensure no data is missed
+      const { data: studentsData, error: sError } = await supabase
         .from('students')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
       
-      const { data: logsData } = await supabase
+      const { data: logsData, error: lError } = await supabase
         .from('attendance_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+
+      if (sError) console.error('Student fetch error:', sError);
+      if (lError) console.error('Logs fetch error:', lError);
       
       if (studentsData) {
-        // 2. Auto-repair: If any student has no coach_id, assign them to current user
-        const toRepair = studentsData.filter(s => !s.coach_id);
-        if (toRepair.length > 0) {
-          await Promise.all(toRepair.map(s => 
+        // 2. Self-Healing: If any record is missing the coach_id, assign it to the current coach
+        // This ensures they appear in filtered views later and stay synced across devices
+        const orphans = studentsData.filter(s => !s.coach_id);
+        if (orphans.length > 0) {
+          console.log(`Repairing ${orphans.length} orphaned student records...`);
+          await Promise.all(orphans.map(s => 
             supabase.from('students').update({ coach_id: session.user.id }).eq('id', s.id)
           ));
         }
 
         setStudents(studentsData.map(s => ({
           ...s,
-          joinedDate: s.joined_date,
+          joinedDate: s.joined_date || s.created_at,
           lessonType: s.lesson_type,
           totalSessions: s.total_sessions,
           remainingSessions: s.remaining_sessions,
@@ -216,18 +222,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           inflowRoute: s.inflow_route
         })));
       }
+
       if (logsData) {
-        // Also auto-repair logs
-        const toRepairLogs = logsData.filter(l => !l.coach_id);
-        if (toRepairLogs.length > 0) {
-           await Promise.all(toRepairLogs.map(l => 
+        // Self-heal logs too
+        const orphanLogs = logsData.filter(l => !l.coach_id);
+        if (orphanLogs.length > 0) {
+          console.log(`Repairing ${orphanLogs.length} orphaned log records...`);
+          await Promise.all(orphanLogs.map(l => 
             supabase.from('attendance_logs').update({ coach_id: session.user.id }).eq('id', l.id)
           ));
         }
         setLogs(logsData.map(l => ({ ...l, studentId: l.student_id, isInjury: l.is_injury })));
       }
     } catch (err) {
-      console.error('Data fetch failed:', err);
+      console.error('CRITICAL: Data fetch failed:', err);
     } finally {
       setLoading(false);
     }
