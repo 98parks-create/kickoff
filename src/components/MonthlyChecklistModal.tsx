@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 import { 
@@ -8,7 +8,9 @@ import {
   Calendar, 
   Wallet, 
   CheckCircle2, 
-  Circle 
+  Circle,
+  Search,
+  User
 } from 'lucide-react';
 
 interface Props {
@@ -27,6 +29,8 @@ const MonthlyChecklistModal: React.FC<Props> = ({
   viewType 
 }) => {
   const { students, logs, recordGridCheck } = useAppContext();
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Date helpers
   const year = selectedDate.getFullYear();
@@ -37,7 +41,15 @@ const MonthlyChecklistModal: React.FC<Props> = ({
   const prevMonth = () => setSelectedDate(new Date(year, month - 1, 1));
   const nextMonth = () => setSelectedDate(new Date(year, month + 1, 1));
 
-  const filteredStudents = students.filter(s => s.lessonType === viewType);
+  const filteredStudents = useMemo(() => {
+    return students
+      .filter(s => s.lessonType === viewType)
+      .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [students, viewType, searchTerm]);
+
+  const selectedStudent = useMemo(() => {
+    return students.find(s => s.id === selectedStudentId);
+  }, [students, selectedStudentId]);
 
   if (!isOpen) return null;
 
@@ -62,18 +74,31 @@ const MonthlyChecklistModal: React.FC<Props> = ({
             padding: 0, 
             display: 'flex', 
             flexDirection: 'column',
-            maxWidth: '100%' 
+            maxWidth: '100%',
+            background: '#121214'
           }}
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={20} color="var(--primary)" />
-                월간 출석 및 결제 체크
-              </h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem' }}>{viewType === 'Private' ? '개인 레슨' : '그룹 레슨'} 목록</p>
+          <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {selectedStudentId && (
+                <button 
+                   onClick={() => setSelectedStudentId(null)}
+                   className="glass"
+                   style={{ padding: '0.5rem', borderRadius: '0.5rem', border: 'none', color: 'var(--primary)' }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+              )}
+              <div>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+                  {selectedStudentId ? `${selectedStudent?.name} 선수 관리` : '출석 및 결제 체크'}
+                </h2>
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                  {selectedStudentId ? `${monthName}` : `${viewType === 'Private' ? '개인' : '그룹'} 레슨 리스트`}
+                </p>
+              </div>
             </div>
             <button 
               onClick={onClose}
@@ -84,88 +109,134 @@ const MonthlyChecklistModal: React.FC<Props> = ({
             </button>
           </div>
 
-          {/* Month Selector Column */}
-          <div style={{ padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem' }}>
-            <button onClick={prevMonth} className="nav-btn"><ChevronLeft size={20} /></button>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{monthName}</span>
-            <button onClick={nextMonth} className="nav-btn"><ChevronRight size={20} /></button>
-          </div>
-
-          {/* Guide */}
-          <div style={{ padding: '0.5rem 1.5rem', display: 'flex', justifyContent: 'flex-end', fontSize: '0.75rem', color: 'var(--muted)', gap: '1rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle2 size={12} color="var(--primary)" /> 출석</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Wallet size={12} color="var(--accent)" /> 결제</span>
-          </div>
-
-          {/* Grid View */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '0 0.5rem 2rem' }}>
-            <div className="glass" style={{ borderRadius: '1rem', overflow: 'hidden' }}>
-              <table className="checklist-table" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                <thead style={{ position: 'sticky', top: 0, zIndex: 100 }}>
-                  <tr>
-                    <th className="sticky-col" style={{ width: '60px', background: '#1A1A1C', borderBottom: '2px solid var(--glass-border)' }}>날짜</th>
-                    {filteredStudents.map(s => (
-                      <th key={s.id} colSpan={2} style={{ padding: '0.75rem', background: '#1A1A1C', borderBottom: '2px solid var(--glass-border)', minWidth: '120px' }}>
-                        {s.name}
-                      </th>
-                    ))}
-                  </tr>
-                  <tr>
-                    <th className="sticky-col" style={{ visibility: 'hidden', height: 0, padding: 0, border: 'none' }}></th>
-                    {filteredStudents.map(s => (
-                      <React.Fragment key={s.id}>
-                        <th className="sub-th" style={{ background: '#262629', fontSize: '0.65rem', padding: '0.25rem' }}>출석</th>
-                        <th className="sub-th" style={{ background: '#262629', fontSize: '0.65rem', padding: '0.25rem' }}>결제</th>
-                      </React.Fragment>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const dateStr = `${year}. ${month + 1}. ${day}.`;
-                    
-                    return (
-                      <tr key={day}>
-                        <td className="sticky-col day-cell" style={{ zIndex: 90, background: '#1A1A1C' }}>{day}일</td>
-                        {filteredStudents.map(s => {
-                          const attendLog = logs.find(l => l.studentId === s.id && l.date === dateStr && l.type === 'attendance');
-                          const paymentLog = logs.find(l => l.studentId === s.id && l.date === dateStr && l.type === 'payment');
-                          
-                          return (
-                            <React.Fragment key={s.id}>
-                              <td className="check-cell" style={{ borderBottom: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)' }}>
-                                <button 
-                                  onClick={() => recordGridCheck(s.id, dateStr, 'attendance', !attendLog)}
-                                  className={`check-btn ${attendLog ? 'checked' : ''}`}
-                                  style={{ padding: '0.75rem 0' }}
-                                >
-                                  {attendLog ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                                </button>
-                              </td>
-                              <td className="check-cell" style={{ borderBottom: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)' }}>
-                                <button 
-                                  onClick={() => recordGridCheck(s.id, dateStr, 'payment', !paymentLog)}
-                                  className={`check-btn payment ${paymentLog ? 'checked' : ''}`}
-                                  style={{ padding: '0.75rem 0' }}
-                                >
-                                  {paymentLog ? <Wallet size={18} /> : <Circle size={18} />}
-                                </button>
-                              </td>
-                            </React.Fragment>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {!selectedStudentId ? (
+            /* Phase 1: Player Selection List */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', pading: '1rem', overflow: 'hidden' }}>
+              <div style={{ padding: '1rem' }}>
+                 <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', borderRadius: '1rem' }}>
+                    <Search size={18} color="var(--muted)" style={{ marginRight: '0.5rem' }} />
+                    <input 
+                       placeholder="선수 이름 검색..." 
+                       value={searchTerm}
+                       onChange={e => setSearchTerm(e.target.value)}
+                       style={{ background: 'none', border: 'none', color: '#fff', flex: 1, outline: 'none' }}
+                    />
+                 </div>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 1rem 1rem' }}>
+                 {filteredStudents.map(student => (
+                    <button 
+                       key={student.id}
+                       onClick={() => setSelectedStudentId(student.id)}
+                       className="premium-card"
+                       style={{ 
+                          width: '100%', 
+                          textAlign: 'left', 
+                          padding: '1.25rem', 
+                          marginBottom: '0.75rem', 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          border: '1px solid var(--glass-border)'
+                       }}
+                    >
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                             <User size={20} color="var(--primary)" />
+                          </div>
+                          <div>
+                             <h4 style={{ fontWeight: 800 }}>{student.name}</h4>
+                             <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{student.team || '소속 없음'}</p>
+                          </div>
+                       </div>
+                       <ChevronRight size={18} color="var(--muted)" />
+                    </button>
+                 ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Phase 2: Individual Player Calendar Grid */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Individual Month Selector */}
+              <div style={{ padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem' }}>
+                <button onClick={prevMonth} className="nav-btn"><ChevronLeft size={20} /></button>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{monthName}</span>
+                <button onClick={nextMonth} className="nav-btn"><ChevronRight size={20} /></button>
+              </div>
+
+              {/* Guide */}
+              <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><CheckCircle2 size={16} color="var(--primary)" /> 출석</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><Wallet size={16} color="var(--accent)" /> 결제</span>
+              </div>
+
+              {/* Vertical Scrollable List of Days */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const dateStr = `${year}. ${month + 1}. ${day}.`;
+                  const attendLog = logs.find(l => l.studentId === selectedStudentId && l.date === dateStr && l.type === 'attendance');
+                  const paymentLog = logs.find(l => l.studentId === selectedStudentId && l.date === dateStr && l.type === 'payment');
+
+                  return (
+                    <div 
+                       key={day} 
+                       className="glass"
+                       style={{ 
+                          padding: '1rem', 
+                          marginBottom: '0.5rem', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between', 
+                          borderRadius: '1rem',
+                          border: '1px solid rgba(255,255,255,0.05)'
+                       }}
+                    >
+                      <div style={{ width: '80px', fontWeight: 800, fontSize: '0.95rem' }}>{day}일</div>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button 
+                           onClick={() => recordGridCheck(selectedStudentId, dateStr, 'attendance', !attendLog)}
+                           style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'center', 
+                              gap: '0.25rem',
+                              background: 'none',
+                              border: 'none',
+                              color: attendLog ? 'var(--primary)' : 'rgba(255,255,255,0.1)'
+                           }}
+                        >
+                           {attendLog ? <CheckCircle2 size={28} /> : <Circle size={28} />}
+                           <span style={{ fontSize: '0.65rem' }}>출석</span>
+                        </button>
+                        <button 
+                           onClick={() => recordGridCheck(selectedStudentId, dateStr, 'payment', !paymentLog)}
+                           style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'center', 
+                              gap: '0.25rem',
+                              background: 'none',
+                              border: 'none',
+                              color: paymentLog ? 'var(--accent)' : 'rgba(255,255,255,0.1)'
+                           }}
+                        >
+                           {paymentLog ? <Wallet size={28} /> : <Circle size={28} />}
+                           <span style={{ fontSize: '0.65rem' }}>결제</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
   );
 };
+
+export default MonthlyChecklistModal;
 
 export default MonthlyChecklistModal;

@@ -50,16 +50,12 @@ const Management: React.FC = () => {
         const studentLogs = monthLogs.filter(l => l.studentId === student.id);
         
         const attendanceCount = studentLogs.filter(l => l.type === 'attendance').length;
-        const paymentCount = studentLogs.filter(l => l.type === 'payment').length;
-        const revenue = (student.pricePerLesson || 0) * paymentCount;
-        const unpaidAmount = Math.max(0, (student.pricePerLesson || 0) * attendanceCount - revenue);
+        const totalUsed = (student.totalSessions - student.remainingSessions);
 
         return {
           ...student,
-          attendanceCount,
-          paymentCount,
-          revenue,
-          unpaidAmount
+          attendanceCount, // Monthly count
+          totalUsed // Cumulative used from total
         };
       });
   }, [students, logs, month, year, view]);
@@ -79,11 +75,6 @@ const Management: React.FC = () => {
     return filteredData.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredData, currentPage]);
 
-  const totals = filteredData.reduce((acc, curr) => ({
-    revenue: acc.revenue + curr.revenue,
-    unpaid: acc.unpaid + curr.unpaidAmount
-  }), { revenue: 0, unpaid: 0 });
-
   // Reset page when search or view changes
   useEffect(() => {
     setCurrentPage(1);
@@ -101,7 +92,7 @@ const Management: React.FC = () => {
         <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>현황 관리</h1>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>수강생 목록 및 월간 체크리스트 통합 대시보드</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>선수 훈련 현황 및 월간 출석 대시보드</p>
           </div>
           <div className="glass" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.6rem 1.25rem', borderRadius: '1.25rem' }}>
             <button onClick={prevMonth} className="nav-btn"><ChevronLeft size={20} /></button>
@@ -209,7 +200,7 @@ const Management: React.FC = () => {
           style={{ padding: '0.6rem 1.25rem', fontSize: '0.9rem', borderRadius: '0.875rem' }}
         >
           <CheckSquare size={18} />
-          {month + 1}월 출석/결제 관리
+          {month + 1}월 출석 관리
         </button>
       </div>
 
@@ -225,11 +216,9 @@ const Management: React.FC = () => {
                 <th style={{ minWidth: '120px' }}>소속</th>
                 <th style={{ width: '80px' }}>연령</th>
                 <th style={{ width: '100px' }}>유입</th>
-                <th style={{ minWidth: '110px' }}>단가</th>
-                <th style={{ width: '60px' }}>참여</th>
-                <th style={{ width: '60px' }}>결제</th>
-                <th style={{ minWidth: '120px' }}>수입</th>
-                <th style={{ minWidth: '120px' }}>미수금</th>
+                <th style={{ minWidth: '110px' }}>레슨 단가</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>당월 참여</th>
+                <th style={{ minWidth: '140px', textAlign: 'center' }}>전체 훈련현황</th>
                 <th style={{ textAlign: 'center', width: '100px' }}>관리</th>
               </tr>
             </thead>
@@ -242,11 +231,12 @@ const Management: React.FC = () => {
                   <td><span className="badge badge-yellow" style={{ fontSize: '0.65rem' }}>{student.ageCategory || 'U15'}</span></td>
                   <td><span className="badge badge-green" style={{ fontSize: '0.65rem' }}>{student.inflowRoute || '소개'}</span></td>
                   <td style={{ fontWeight: 600 }}>₩{(student.pricePerLesson || 0).toLocaleString()}</td>
-                  <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{student.attendanceCount}</td>
-                  <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{student.paymentCount}</td>
-                  <td style={{ color: 'var(--primary)', fontWeight: 800 }}>₩{student.revenue.toLocaleString()}</td>
-                  <td style={{ color: student.unpaidAmount > 0 ? '#EF4444' : 'var(--muted)', fontWeight: 800 }}>
-                    ₩{student.unpaidAmount.toLocaleString()}
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: 'var(--primary)', fontSize: '1.1rem' }}>{student.attendanceCount}회</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '0.75rem' }}>
+                        <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{student.totalUsed}</span>
+                        <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>/ {student.totalSessions}회</span>
+                    </div>
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
@@ -270,18 +260,11 @@ const Management: React.FC = () => {
               ))}
               {paginatedData.length === 0 && (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>
                     {searchTerm ? `'${searchTerm}'에 대한 검색 결과가 없습니다.` : '등록된 레슨생이 없습니다.'}
                   </td>
                 </tr>
               )}
-              {/* Total Row */}
-              <tr style={{ background: 'rgba(34, 197, 94, 0.05)', fontWeight: 800 }}>
-                <td colSpan={8} style={{ textAlign: 'right', color: 'var(--muted)', padding: '1.25rem' }}>검색/필터 결과 총계</td>
-                <td style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>₩{totals.revenue.toLocaleString()}</td>
-                <td style={{ color: '#EF4444', fontSize: '1.1rem' }}>₩{totals.unpaid.toLocaleString()}</td>
-                <td></td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -310,51 +293,36 @@ const Management: React.FC = () => {
                   </div>
                 </div>
                 <div className="mobile-card-item">
-                  <label>레슨 단가</label>
-                  <span>₩{(student.pricePerLesson || 0).toLocaleString()}</span>
+                  <label>당월 참여</label>
+                  <span style={{ color: 'var(--primary)' }}>{student.attendanceCount}회</span>
                 </div>
-                <div className="mobile-card-item">
-                  <label>참여 / 결제</label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <span style={{ color: 'var(--primary)' }}>참여: {student.attendanceCount}</span>
-                    <span style={{ color: 'var(--accent)' }}>결제: {student.paymentCount}</span>
+                <div className="mobile-card-item" style={{ gridColumn: 'span 2' }}>
+                  <label>전체 훈련 현황</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ 
+                            width: `${(student.totalUsed / student.totalSessions) * 100}%`, 
+                            height: '100%', 
+                            background: 'var(--primary)',
+                            borderRadius: '3px'
+                        }}></div>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{student.totalUsed} <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--muted)' }}>/ {student.totalSessions}회</span></span>
                   </div>
-                </div>
-                <div className="mobile-card-item">
-                  <label>당월 수입</label>
-                  <span style={{ color: 'var(--primary)' }}>₩{student.revenue.toLocaleString()}</span>
                 </div>
               </div>
 
-              <div className="mobile-card-footer">
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.65rem', color: 'var(--muted)', textTransform: 'uppercase' }}>미수금</label>
-                    <span style={{ color: student.unpaidAmount > 0 ? '#EF4444' : 'var(--muted)', fontSize: '1.1rem' }}>
-                        ₩{student.unpaidAmount.toLocaleString()}
-                    </span>
+              {student.remainingSessions <= 2 && (
+                <div className="mobile-card-footer" style={{ border: 'none', padding: 0 }}>
+                    <span className="badge badge-red" style={{ animation: 'pulse 2s infinite', width: '100%', textAlign: 'center', padding: '0.5rem' }}>잔여 2회 이하 - 재등록 안내 대상</span>
                 </div>
-                {student.remainingSessions <= 2 && (
-                    <span className="badge badge-red" style={{ animation: 'pulse 2s infinite' }}>재등록 대상</span>
-                )}
-              </div>
+              )}
             </div>
           ))}
 
           {paginatedData.length === 0 && (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>결과가 없습니다.</div>
           )}
-
-          {/* Mobile Total Section */}
-          <div className="premium-card" style={{ marginTop: '1.5rem', background: 'rgba(34, 197, 94, 0.05)', borderStyle: 'dashed' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>총 수입</span>
-              <span style={{ color: 'var(--primary)', fontWeight: 800 }}>₩{totals.revenue.toLocaleString()}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>총 미수금</span>
-              <span style={{ color: '#EF4444', fontWeight: 800 }}>₩{totals.unpaid.toLocaleString()}</span>
-            </div>
-          </div>
         </div>
 
         {/* Pagination Controls */}
