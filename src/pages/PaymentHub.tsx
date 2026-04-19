@@ -276,5 +276,3 @@ const PaymentHub: React.FC = () => {
 };
 
 export default PaymentHub;
-
-export default PaymentHub;

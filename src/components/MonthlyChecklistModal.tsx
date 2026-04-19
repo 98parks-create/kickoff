@@ -111,7 +111,7 @@ const MonthlyChecklistModal: React.FC<Props> = ({
 
           {!selectedStudentId ? (
             /* Phase 1: Player Selection List */
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', pading: '1rem', overflow: 'hidden' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', overflow: 'hidden' }}>
               <div style={{ padding: '1rem' }}>
                  <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', borderRadius: '1rem' }}>
                     <Search size={18} color="var(--muted)" style={{ marginRight: '0.5rem' }} />
@@ -236,7 +236,5 @@ const MonthlyChecklistModal: React.FC<Props> = ({
     </AnimatePresence>
   );
 };
-
-export default MonthlyChecklistModal;
 
 export default MonthlyChecklistModal;
