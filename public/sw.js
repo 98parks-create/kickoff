@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kickoff-v2';
+const CACHE_NAME = 'kickoff-v3'; // Bump version for the new navigation strategy
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,7 @@ const ASSETS = [
 
 // 1. Install - cache static assets
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Force the waiting service worker to become the active service worker
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -23,32 +23,30 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
       );
-    }).then(() => self.clients.claim()) // Immediately take control of all clients
+    }).then(() => self.clients.claim())
   );
 });
 
-// 3. Fetch - Network First for the root/index.html to prevent stale dashboard crashes
+// 3. Fetch - Progressive Strategy for SPA
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // If it's a request for the main page or root, try network first
-  if (url.origin === self.location.origin && (url.pathname === '/' || url.pathname === '/index.html')) {
+  // Navigation requests (Page Refreshes) - ALWAYS serve index.html
+  if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          const clonedResponse = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clonedResponse));
-          return response;
+        .catch(() => {
+          return caches.match('/index.html') || caches.match('/');
         })
-        .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Common Strategy for other assets: Cache First
+  // Common Strategy for other assets: Cache First, then Network
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      return response || fetch(event.request).then((fetchRes) => {
+        // Optionally cache new assets on the fly
+        return fetchRes;
+      });
     })
   );
 });
