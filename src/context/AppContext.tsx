@@ -133,19 +133,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 
   const fetchData = async () => {
-    if (!session) return;
+    let currentSession = session;
+    
+    // Fallback: If session state isn't set yet, try to get it directly from supabase
+    if (!currentSession) {
+      const { data } = await supabase.auth.getSession();
+      currentSession = data.session;
+    }
+
+    if (!currentSession) return;
+
     try {
       // 1. Individual Account Isolation: Only fetch data where coach_id matches current user
       const { data: studentsData, error: sError } = await supabase
         .from('students')
         .select('*')
-        .eq('coach_id', session.user.id)
+        .eq('coach_id', currentSession.user.id)
         .order('created_at', { ascending: false });
       
       const { data: logsData, error: lError } = await supabase
         .from('attendance_logs')
         .select('*')
-        .eq('coach_id', session.user.id)
+        .eq('coach_id', currentSession.user.id)
         .order('created_at', { ascending: false });
 
       if (sError) console.error('Student fetch error:', sError);

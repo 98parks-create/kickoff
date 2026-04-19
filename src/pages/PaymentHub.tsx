@@ -99,7 +99,14 @@ const PaymentHub: React.FC = () => {
             <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase' }}>당월 확정 매출</span>
             <TrendingUp size={20} color="var(--primary)" />
           </div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
+          <div style={{ 
+            fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', 
+            fontWeight: 900, 
+            letterSpacing: '-0.02em',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
             ₩{totals.revenue.toLocaleString()}
           </div>
           <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>선택한 달의 수업 결제 체크 합계</p>
@@ -117,7 +124,15 @@ const PaymentHub: React.FC = () => {
             <span style={{ color: '#EF4444', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase' }}>당월 총 미수금</span>
             <Clock size={20} color="#EF4444" />
           </div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#EF4444' }}>
+          <div style={{ 
+            fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', 
+            fontWeight: 900, 
+            letterSpacing: '-0.02em', 
+            color: '#EF4444',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
             ₩{totals.unpaid.toLocaleString()}
           </div>
           <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>출석 대비 결제가 부족한 레슨생 합계</p>
@@ -188,7 +203,14 @@ const PaymentHub: React.FC = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: 800 }}>당월 수입</label>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)' }}>
+                  <div style={{ 
+                    fontSize: 'clamp(1rem, 4vw, 1.25rem)', 
+                    fontWeight: 900, 
+                    color: 'var(--primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                     ₩{student.monthlyRevenue.toLocaleString()}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
@@ -197,7 +219,14 @@ const PaymentHub: React.FC = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: 800 }}>당월 미수금</label>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 900, color: student.monthlyUnpaid > 0 ? '#EF4444' : 'var(--muted)' }}>
+                  <div style={{ 
+                    fontSize: 'clamp(1rem, 4vw, 1.25rem)', 
+                    fontWeight: 900, 
+                    color: student.monthlyUnpaid > 0 ? '#EF4444' : 'var(--muted)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                     ₩{student.monthlyUnpaid.toLocaleString()}
                   </div>
                 </div>
