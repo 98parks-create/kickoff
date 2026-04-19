@@ -175,10 +175,10 @@ body {
 }
 
 main {
-  padding: 1.5rem 1rem 6rem;
-  max-width: 600px;
+  padding: 1.5rem 1.5rem 6rem;
+  max-width: 1200px;
   margin: 0 auto;
-  width: 100%;
+  width: 95%;
 }
 
 h1, h2, h3 {

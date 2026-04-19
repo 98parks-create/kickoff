@@ -98,7 +98,7 @@ const Management: React.FC = () => {
   return (
     <div className="management-page" style={{ padding: '1rem', color: '#fff' }}>
       <header style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>현황 관리</h1>
             <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>수강생 목록 및 월간 체크리스트 통합 대시보드</p>
@@ -110,7 +110,7 @@ const Management: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="filter-search-container" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Lesson Type Filter */}
           <div className="glass" style={{ display: 'flex', padding: '0.25rem', borderRadius: '1rem', minWidth: '240px' }}>
             {(['Private', 'Group'] as const).map(type => (
@@ -368,10 +368,9 @@ const Management: React.FC = () => {
           width: 100%;
           border-collapse: collapse;
           font-size: 0.85rem;
-          min-width: 1000px;
         }
         .management-table th, .management-table td {
-          padding: 1.1rem 0.75rem;
+          padding: 1.1rem 0.5rem;
           text-align: left;
           border-bottom: 1px solid var(--glass-border);
         }
@@ -379,12 +378,46 @@ const Management: React.FC = () => {
           background: rgba(255,255,255,0.02);
           color: var(--muted);
           font-weight: 700;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
         .management-table tr:hover td {
           background: rgba(255,255,255,0.01);
+        }
+
+        @media (max-width: 850px) {
+          .management-page {
+            padding: 0.5rem;
+          }
+          .management-table {
+            font-size: 0.75rem;
+          }
+          /* Hide non-essential columns on smaller screens to prevent scroll */
+          .management-table th:nth-child(4), .management-table td:nth-child(4), /* Age */
+          .management-table th:nth-child(5), .management-table td:nth-child(5)  /* Inflow */ {
+            display: none;
+          }
+          .management-table th, .management-table td {
+            padding: 0.8rem 0.4rem;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .management-table th:nth-child(3), .management-table td:nth-child(3) /* Team */ {
+            display: none;
+          }
+          .management-table th:nth-child(6), .management-table td:nth-child(6) /* Price */ {
+            display: none;
+          }
+          .header-row {
+            flex-direction: column;
+            align-items: stretch !important;
+          }
+          .filter-search-container {
+            flex-direction: column;
+            align-items: stretch !important;
+          }
         }
 
         .checklist-table {
