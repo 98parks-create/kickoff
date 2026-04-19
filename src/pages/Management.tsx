@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext, type Student } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -8,10 +8,15 @@ import {
   Edit2, 
   Trash2,
   CheckSquare,
-  Users
+  Users,
+  Search,
+  ChevronFirst,
+  ChevronLast
 } from 'lucide-react';
 import MonthlyChecklistModal from '../components/MonthlyChecklistModal';
 import StudentDetailModal from '../components/StudentDetailModal';
+
+const ITEMS_PER_PAGE = 15;
 
 const Management: React.FC = () => {
   const { students, logs, deleteStudent } = useAppContext();
@@ -19,6 +24,10 @@ const Management: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  
+  // Search & Pagination State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Date helpers
   const year = selectedDate.getFullYear();
@@ -55,10 +64,30 @@ const Management: React.FC = () => {
       });
   }, [students, logs, month, year, view]);
 
-  const totals = gridData.reduce((acc, curr) => ({
+  // Filtering based on search
+  const filteredData = useMemo(() => {
+    return gridData.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.team && s.team.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [gridData, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredData.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredData, currentPage]);
+
+  const totals = filteredData.reduce((acc, curr) => ({
     revenue: acc.revenue + curr.revenue,
     unpaid: acc.unpaid + curr.unpaidAmount
   }), { revenue: 0, unpaid: 0 });
+
+  // Reset page when search or view changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, view]);
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`${name} 선수를 삭제하시겠습니까? 관련 모든 기록이 삭제됩니다.`)) {
@@ -74,39 +103,71 @@ const Management: React.FC = () => {
             <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>현황 관리</h1>
             <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>수강생 목록 및 월간 체크리스트 통합 대시보드</p>
           </div>
-          <div className="glass" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem 1rem', borderRadius: '1rem' }}>
+          <div className="glass" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.6rem 1.25rem', borderRadius: '1.25rem' }}>
             <button onClick={prevMonth} className="nav-btn"><ChevronLeft size={20} /></button>
-            <span style={{ fontWeight: 700, minWidth: '100px', textAlign: 'center' }}>{monthName}</span>
+            <span style={{ fontWeight: 800, minWidth: '100px', textAlign: 'center', fontSize: '1.1rem' }}>{monthName}</span>
             <button onClick={nextMonth} className="nav-btn"><ChevronRight size={20} /></button>
           </div>
         </div>
 
-        {/* Lesson Type Filter */}
-        <div className="glass" style={{ display: 'flex', padding: '0.25rem', borderRadius: '1rem', maxWidth: '400px' }}>
-          {(['Private', 'Group'] as const).map(type => (
-            <button
-              key={type}
-              onClick={() => setView(type)}
-              style={{
-                flex: 1,
-                padding: '0.75rem',
-                border: 'none',
-                background: view === type ? 'var(--primary)' : 'transparent',
-                color: view === type ? '#000' : 'var(--muted)',
-                borderRadius: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Lesson Type Filter */}
+          <div className="glass" style={{ display: 'flex', padding: '0.25rem', borderRadius: '1rem', minWidth: '240px' }}>
+            {(['Private', 'Group'] as const).map(type => (
+              <button
+                key={type}
+                onClick={() => setView(type)}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem',
+                  border: 'none',
+                  background: view === type ? 'var(--primary)' : 'transparent',
+                  color: view === type ? '#000' : 'var(--muted)',
+                  borderRadius: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <Users size={16} />
+                {type === 'Private' ? '개인 레슨' : '그룹 레슨'}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Bar */}
+          <div className="glass" style={{ 
+            flex: 1, 
+            minWidth: '280px', 
+            maxWidth: '500px',
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '0.25rem 1rem', 
+            borderRadius: '1rem',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <Search size={18} color="var(--muted)" style={{ marginRight: '0.75rem' }} />
+            <input 
+              type="text"
+              placeholder="레슨생 이름 또는 소속 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#fff', 
+                width: '100%', 
+                padding: '0.6rem 0',
+                outline: 'none',
+                fontSize: '0.9rem'
               }}
-            >
-              <Users size={18} />
-              {type === 'Private' ? '개인 레슨' : '그룹 레슨'}
-            </button>
-          ))}
+            />
+          </div>
         </div>
       </header>
 
@@ -123,78 +184,82 @@ const Management: React.FC = () => {
               borderColor: '#EAB308',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem'
+              gap: '1.25rem'
             }}
           >
-            <AlertCircle color="var(--accent)" />
+            <div style={{ background: 'rgba(234, 179, 8, 0.15)', padding: '0.75rem', borderRadius: '1rem' }}>
+              <AlertCircle color="var(--accent)" size={24} />
+            </div>
             <div>
-              <h4 style={{ color: 'var(--accent)' }}>재등록 안내 대상자</h4>
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>잔여 횟수가 2회 이하인 학생이 있습니다.</p>
+              <h4 style={{ color: 'var(--accent)', fontWeight: 800 }}>재등록안내 대상 발생!</h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.25rem' }}>잔여 횟수가 2회 이하인 선수가 있습니다. 테이블에서 확인하세요.</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Summary Section Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3>{view === 'Private' ? '수강생 목록' : '그룹 목록'} ({gridData.length}명)</h3>
+      {/* Action Button & Summary Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+          {view === 'Private' ? '개인 레슨생' : '그룹 레슨팀'} 명단 ({filteredData.length})
+        </h3>
         <button 
           onClick={() => setIsChecklistOpen(true)}
           className="btn-primary"
-          style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+          style={{ padding: '0.6rem 1.25rem', fontSize: '0.9rem', borderRadius: '0.875rem' }}
         >
-          <CheckSquare size={16} />
-          {month + 1}월 통합 체크리스트 열기
+          <CheckSquare size={18} />
+          {month + 1}월 출석/결제 관리
         </button>
       </div>
 
       {/* 1. Summary Table Section */}
-      <section className="glass" style={{ borderRadius: '1.5rem', overflow: 'hidden', marginBottom: '2rem' }}>
+      <section className="glass" style={{ borderRadius: '1.5rem', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table className="management-table">
             <thead>
               <tr>
-                <th>순번</th>
-                <th>선수 이름</th>
-                <th>소속</th>
-                <th>연령</th>
-                <th>유입</th>
-                <th>단가</th>
-                <th>참여</th>
-                <th>결제</th>
-                <th>수입</th>
-                <th>미수금</th>
-                <th style={{ textAlign: 'center' }}>관리</th>
+                <th style={{ width: '60px' }}>순번</th>
+                <th style={{ minWidth: '100px' }}>선수 이름</th>
+                <th style={{ minWidth: '120px' }}>소속</th>
+                <th style={{ width: '80px' }}>연령</th>
+                <th style={{ width: '100px' }}>유입</th>
+                <th style={{ minWidth: '110px' }}>단가</th>
+                <th style={{ width: '60px' }}>참여</th>
+                <th style={{ width: '60px' }}>결제</th>
+                <th style={{ minWidth: '120px' }}>수입</th>
+                <th style={{ minWidth: '120px' }}>미수금</th>
+                <th style={{ textAlign: 'center', width: '100px' }}>관리</th>
               </tr>
             </thead>
             <tbody>
-              {gridData.map((student, idx) => (
+              {paginatedData.map((student, idx) => (
                 <tr key={student.id}>
-                  <td>{idx + 1}</td>
-                  <td style={{ fontWeight: 700 }}>{student.name}</td>
+                  <td style={{ color: 'var(--muted)', fontWeight: 500 }}>{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                  <td style={{ fontWeight: 800, fontSize: '1rem' }}>{student.name}</td>
                   <td>{student.team || '-'}</td>
                   <td><span className="badge badge-yellow" style={{ fontSize: '0.65rem' }}>{student.ageCategory || 'U15'}</span></td>
-                  <td><span className="badge badge-green" style={{ fontSize: '0.65rem' }}>{student.inflowRoute || 'SNS'}</span></td>
-                  <td>₩{(student.pricePerLesson || 0).toLocaleString()}</td>
-                  <td style={{ fontWeight: 600 }}>{student.attendanceCount}</td>
-                  <td style={{ fontWeight: 600 }}>{student.paymentCount}</td>
-                  <td style={{ color: 'var(--primary)', fontWeight: 700 }}>₩{student.revenue.toLocaleString()}</td>
-                  <td style={{ color: student.unpaidAmount > 0 ? '#EF4444' : 'var(--muted)', fontWeight: 700 }}>
+                  <td><span className="badge badge-green" style={{ fontSize: '0.65rem' }}>{student.inflowRoute || '소개'}</span></td>
+                  <td style={{ fontWeight: 600 }}>₩{(student.pricePerLesson || 0).toLocaleString()}</td>
+                  <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{student.attendanceCount}</td>
+                  <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{student.paymentCount}</td>
+                  <td style={{ color: 'var(--primary)', fontWeight: 800 }}>₩{student.revenue.toLocaleString()}</td>
+                  <td style={{ color: student.unpaidAmount > 0 ? '#EF4444' : 'var(--muted)', fontWeight: 800 }}>
                     ₩{student.unpaidAmount.toLocaleString()}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
                       <button 
                         onClick={() => setEditingStudent(student)}
                         className="glass"
-                        style={{ padding: '0.4rem', borderRadius: '0.5rem', border: 'none', color: 'var(--muted)' }}
+                        style={{ padding: '0.5rem', borderRadius: '0.6rem', border: 'none', color: 'var(--muted)' }}
                       >
                         <Edit2 size={14} />
                       </button>
                       <button 
                         onClick={() => handleDelete(student.id, student.name)}
                         className="glass"
-                        style={{ padding: '0.4rem', borderRadius: '0.5rem', border: 'none', color: '#EF4444' }}
+                        style={{ padding: '0.5rem', borderRadius: '0.6rem', border: 'none', color: '#EF4444' }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -202,16 +267,61 @@ const Management: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {/* Total Row */}
-              <tr style={{ background: 'rgba(255,255,255,0.05)', fontWeight: 800 }}>
-                <td colSpan={8} style={{ textAlign: 'right', color: 'var(--muted)' }}>선택 월 합계</td>
-                <td style={{ color: 'var(--primary)', fontSize: '1rem' }}>₩{totals.revenue.toLocaleString()}</td>
-                <td style={{ color: '#EF4444', fontSize: '1rem' }}>₩{totals.unpaid.toLocaleString()}</td>
+              {paginatedData.length === 0 && (
+                <tr>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>
+                    {searchTerm ? `'${searchTerm}'에 대한 검색 결과가 없습니다.` : '등록된 레슨생이 없습니다.'}
+                  </td>
+                </tr>
+              )}
+              {/* Total Row (Based on filtered search, not just page) */}
+              <tr style={{ background: 'rgba(34, 197, 94, 0.05)', fontWeight: 800 }}>
+                <td colSpan={8} style={{ textAlign: 'right', color: 'var(--muted)', padding: '1.25rem' }}>검색/필터 결과 총계</td>
+                <td style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>₩{totals.revenue.toLocaleString()}</td>
+                <td style={{ color: '#EF4444', fontSize: '1.1rem' }}>₩{totals.unpaid.toLocaleString()}</td>
                 <td></td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{ 
+            padding: '1rem', 
+            borderTop: '1px solid var(--glass-border)', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            gap: '1rem' 
+          }}>
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+              className="nav-btn pagination-btn"
+            ><ChevronFirst size={18} /></button>
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="nav-btn pagination-btn"
+            ><ChevronLeft size={18} /></button>
+            
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--muted)' }}>
+              Page <span style={{ color: '#fff' }}>{currentPage}</span> of {totalPages}
+            </span>
+
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="nav-btn pagination-btn"
+            ><ChevronRight size={18} /></button>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              className="nav-btn pagination-btn"
+            ><ChevronLast size={18} /></button>
+          </div>
+        )}
       </section>
 
       {/* Modals */}
@@ -233,37 +343,48 @@ const Management: React.FC = () => {
       </AnimatePresence>
 
       <style>{`
+        .pagination-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+        .pagination-btn {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
         .nav-btn {
           background: none;
           border: none;
           color: #fff;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          padding: 0.25rem;
           border-radius: 50%;
-          transition: background 0.2s;
+          transition: all 0.2s;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.1); }
+        .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
 
         .management-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 0.85rem;
-          min-width: 900px;
+          min-width: 1000px;
         }
         .management-table th, .management-table td {
-          padding: 1rem 0.75rem;
+          padding: 1.1rem 0.75rem;
           text-align: left;
           border-bottom: 1px solid var(--glass-border);
         }
         .management-table th {
-          background: rgba(255,255,255,0.03);
+          background: rgba(255,255,255,0.02);
           color: var(--muted);
-          font-weight: 600;
+          font-weight: 700;
           font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+        .management-table tr:hover td {
+          background: rgba(255,255,255,0.01);
         }
 
         .checklist-table {
@@ -299,30 +420,11 @@ const Management: React.FC = () => {
           font-weight: 700;
           color: var(--muted);
         }
-        .check-cell {
-          padding: 0;
-        }
-        .check-btn {
-          background: none;
-          border: none;
-          color: rgba(255,255,255,0.1);
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          height: 100%;
-        }
         .check-btn.checked {
           color: var(--primary);
         }
         .check-btn.payment.checked {
           color: var(--accent);
-        }
-        .check-btn:hover {
-          background: rgba(255,255,255,0.05);
-          transform: scale(1.1);
         }
       `}</style>
     </div>
