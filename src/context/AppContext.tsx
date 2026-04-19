@@ -179,19 +179,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchData = async () => {
     if (!session) return;
     try {
+      // 1. Fetch all for now to restore visibility
       const { data: studentsData } = await supabase
         .from('students')
         .select('*')
-        .eq('coach_id', session.user.id)
         .order('created_at', { ascending: false });
       
       const { data: logsData } = await supabase
         .from('attendance_logs')
         .select('*')
-        .eq('coach_id', session.user.id)
         .order('created_at', { ascending: false });
       
       if (studentsData) {
+        // 2. Auto-repair: If any student has no coach_id, assign them to current user
+        const toRepair = studentsData.filter(s => !s.coach_id);
+        if (toRepair.length > 0) {
+          await Promise.all(toRepair.map(s => 
+            supabase.from('students').update({ coach_id: session.user.id }).eq('id', s.id)
+          ));
+        }
+
         setStudents(studentsData.map(s => ({
           ...s,
           joinedDate: s.joined_date,
@@ -210,6 +217,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })));
       }
       if (logsData) {
+        // Also auto-repair logs
+        const toRepairLogs = logsData.filter(l => !l.coach_id);
+        if (toRepairLogs.length > 0) {
+           await Promise.all(toRepairLogs.map(l => 
+            supabase.from('attendance_logs').update({ coach_id: session.user.id }).eq('id', l.id)
+          ));
+        }
         setLogs(logsData.map(l => ({ ...l, studentId: l.student_id, isInjury: l.is_injury })));
       }
     } catch (err) {
