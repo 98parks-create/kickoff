@@ -8,4 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase URL or Key is missing. Cloud features will not work.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client with fail-safe URL if missing (dummy URL)
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder'
+);

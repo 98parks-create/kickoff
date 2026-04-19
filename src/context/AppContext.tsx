@@ -65,12 +65,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
 
   useEffect(() => {
-    // 1. Auth Listener
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // 1. Auth Listener with safety timeout
+    const loadTimeout = setTimeout(() => {
       setLoading(false);
-      if (session) syncAndFetch(session);
-    });
+    }, 5000); // Fail safe: stop loading after 5 seconds
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        if (session) syncAndFetch(session);
+      })
+      .catch(err => {
+        console.error('Auth boot failed:', err);
+      })
+      .finally(() => {
+        clearTimeout(loadTimeout);
+        setLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -82,7 +93,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(loadTimeout);
+    };
   }, []);
 
   const syncAndFetch = async (currentSession: Session) => {
