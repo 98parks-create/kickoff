@@ -5,7 +5,6 @@ import {
   X, 
   ChevronLeft, 
   ChevronRight, 
-  Calendar, 
   Wallet, 
   CheckCircle2, 
   Circle,
