@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppContext } from './context/AppContext';
-import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import PaymentHub from './pages/PaymentHub';
 import Management from './pages/Management';
@@ -26,16 +25,13 @@ const Navbar = () => {
       padding: '0 1rem'
     }}>
       <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-        <LayoutDashboard size={24} />
+        <LayoutList size={24} />
       </NavLink>
       <NavLink to="/onboarding" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <Users size={24} />
       </NavLink>
       <NavLink to="/payments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <CreditCard size={24} />
-      </NavLink>
-      <NavLink to="/management" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-        <LayoutList size={24} />
       </NavLink>
     </nav>
   );
@@ -111,10 +107,9 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginWrapper />} />
-      <Route path="/" element={<AuthWrapper><Dashboard /></AuthWrapper>} />
+      <Route path="/" element={<AuthWrapper><Management /></AuthWrapper>} />
       <Route path="/onboarding" element={<AuthWrapper><Onboarding /></AuthWrapper>} />
       <Route path="/payments" element={<AuthWrapper><PaymentHub /></AuthWrapper>} />
-      <Route path="/management" element={<AuthWrapper><Management /></AuthWrapper>} />
     </Routes>
   );
 }
