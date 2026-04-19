@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppContext, type Student } from '../context/AppContext';
-import { X, Calendar, MapPin, Briefcase, Footprints, Trophy, Trash2, Edit3, Check, CreditCard, Save, Share2 } from 'lucide-react';
+import { X, Calendar, MapPin, Briefcase, Footprints, Trophy, Trash2, Edit3, Check, CreditCard, Save, Share2, Users } from 'lucide-react';
 
 interface Props {
   student: Student;
@@ -226,6 +226,43 @@ const StudentDetailModal: React.FC<Props> = ({ student, onClose }) => {
               />
             ) : (
               <span>{student.pricePerLesson ? `${student.pricePerLesson.toLocaleString()}원` : '데이터 없음'}</span>
+            )}
+          </div>
+
+          <div className="detail-item">
+            <label><Users size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> 연령 카테고리</label>
+            {isEditingProfile ? (
+              <select 
+                value={editedStudent.ageCategory}
+                onChange={e => setEditedStudent({...editedStudent, ageCategory: e.target.value})}
+                style={{ width: '100%', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '0.5rem', color: '#fff', padding: '0.4rem' }}
+              >
+                <option value="U12">U12</option>
+                <option value="U15">U15</option>
+                <option value="U18">U18</option>
+                <option value="성인">성인</option>
+              </select>
+            ) : (
+              <span>{student.ageCategory || '데이터 없음'}</span>
+            )}
+          </div>
+
+          <div className="detail-item">
+            <label><Share2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> 유입 경로</label>
+            {isEditingProfile ? (
+              <select 
+                value={editedStudent.inflowRoute}
+                onChange={e => setEditedStudent({...editedStudent, inflowRoute: e.target.value})}
+                style={{ width: '100%', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '0.5rem', color: '#fff', padding: '0.4rem' }}
+              >
+                <option value="소개">소개</option>
+                <option value="팀 레슨">팀 레슨</option>
+                <option value="SNS">SNS</option>
+                <option value="포털">포털</option>
+                <option value="기타">기타</option>
+              </select>
+            ) : (
+              <span>{student.inflowRoute || '데이터 없음'}</span>
             )}
           </div>
         </div>

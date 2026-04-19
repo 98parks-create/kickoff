@@ -3,10 +3,11 @@ import { useAppContext } from './context/AppContext';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import PaymentHub from './pages/PaymentHub';
+import Management from './pages/Management';
 import Login from './pages/Login';
 import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, LogOut, LayoutList } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 
 const Navbar = () => {
@@ -32,6 +33,9 @@ const Navbar = () => {
       </NavLink>
       <NavLink to="/payments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <CreditCard size={24} />
+      </NavLink>
+      <NavLink to="/management" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        <LayoutList size={24} />
       </NavLink>
     </nav>
   );
@@ -93,6 +97,7 @@ function App() {
       <Route path="/" element={<AuthWrapper><Dashboard /></AuthWrapper>} />
       <Route path="/onboarding" element={<AuthWrapper><Onboarding /></AuthWrapper>} />
       <Route path="/payments" element={<AuthWrapper><PaymentHub /></AuthWrapper>} />
+      <Route path="/management" element={<AuthWrapper><Management /></AuthWrapper>} />
     </Routes>
   );
 }

@@ -20,7 +20,9 @@ const Onboarding: React.FC = () => {
     team: '',
     pricePerLesson: 100000,
     preferredFoot: '오른발' as '왼발' | '오른발' | '양발',
-    lessonLocation: ''
+    lessonLocation: '',
+    ageCategory: 'U15',
+    inflowRoute: '소개'
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -148,6 +150,36 @@ const Onboarding: React.FC = () => {
                       value={formData.dob}
                       onChange={e => setFormData({...formData, dob: e.target.value})}
                     />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="glass">
+                    <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>연령별 카테고리</label>
+                    <select 
+                      style={{ width: '100%', padding: '0.875rem', borderRadius: '0.75rem', border: 'none', color: '#fff' }}
+                      value={formData.ageCategory}
+                      onChange={e => setFormData({...formData, ageCategory: e.target.value})}
+                    >
+                      <option value="U12">U12</option>
+                      <option value="U15">U15</option>
+                      <option value="U18">U18</option>
+                      <option value="성인">성인</option>
+                    </select>
+                  </div>
+                  <div className="glass">
+                    <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>유입 경로</label>
+                    <select 
+                      style={{ width: '100%', padding: '0.875rem', borderRadius: '0.75rem', border: 'none', color: '#fff' }}
+                      value={formData.inflowRoute}
+                      onChange={e => setFormData({...formData, inflowRoute: e.target.value})}
+                    >
+                      <option value="소개">소개</option>
+                      <option value="팀 레슨">팀 레슨</option>
+                      <option value="SNS">SNS</option>
+                      <option value="포털">포털</option>
+                      <option value="기타">기타</option>
+                    </select>
                   </div>
                 </div>
 

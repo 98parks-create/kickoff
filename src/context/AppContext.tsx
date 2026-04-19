@@ -4,7 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 
 export interface Student {
   id: string;
-  coach_id: string; // NEW: Required for Supabase
+  coach_id: string;
   name: string;
   contact: string;
   dob: string;
@@ -23,16 +23,20 @@ export interface Student {
   eliteStatus?: string;
   paymentDate?: string;
   depositorName?: string;
+  // NEW FIELDS
+  ageCategory?: 'U12' | 'U15' | 'U18' | '성인' | string;
+  inflowRoute?: '팀 레슨' | '소개' | 'SNS' | '포털' | '기타' | string;
 }
 
 export interface AttendanceLog {
   id: string;
   studentId: string;
-  coach_id: string; // NEW
+  coach_id: string;
   date: string;
   time: string;
   comment?: string;
   isInjury?: boolean;
+  type?: 'attendance' | 'payment'; // NEW
 }
 
 interface AppContextType {
@@ -49,6 +53,7 @@ interface AppContextType {
   confirmPayment: (studentId: string, depositorName: string) => Promise<void>;
   resetPayment: (studentId: string) => Promise<void>;
   addComment: (studentId: string, comment: string) => Promise<void>;
+  recordGridCheck: (studentId: string, date: string, type: 'attendance' | 'payment', checked: boolean) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -109,7 +114,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             lesson_location: s.lessonLocation,
             elite_status: s.eliteStatus || s.goal,
             payment_date: s.paymentDate,
-            depositor_name: s.depositorName
+            depositor_name: s.depositorName,
+            age_category: s.ageCategory,
+            inflow_route: s.inflowRoute
           }));
           await supabase.from('students').insert(toUpload);
           localStorage.removeItem('kickoff_students');
@@ -141,7 +148,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lessonLocation: s.lesson_location,
           eliteStatus: s.elite_status,
           paymentDate: s.payment_date,
-          depositorName: s.depositor_name
+          depositorName: s.depositor_name,
+          ageCategory: s.age_category,
+          inflowRoute: s.inflow_route
         })));
       }
       if (logsData) {
@@ -171,7 +180,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       price_per_lesson: studentData.pricePerLesson,
       preferred_foot: studentData.preferredFoot,
       lesson_location: studentData.lessonLocation,
-      elite_status: studentData.eliteStatus
+      elite_status: studentData.eliteStatus,
+      age_category: studentData.ageCategory,
+      inflow_route: studentData.inflowRoute
     }).select().single();
 
     if (!error) fetchData();
@@ -194,7 +205,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       lesson_location: updatedStudent.lessonLocation,
       elite_status: updatedStudent.eliteStatus,
       payment_date: updatedStudent.paymentDate,
-      depositor_name: updatedStudent.depositorName
+      depositor_name: updatedStudent.depositorName,
+      age_category: updatedStudent.ageCategory,
+      inflow_route: updatedStudent.inflowRoute
     }).eq('id', updatedStudent.id);
     fetchData();
   };
@@ -279,9 +292,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchData();
   };
 
+  const recordGridCheck = async (studentId: string, date: string, type: 'attendance' | 'payment', checked: boolean) => {
+    if (!session) return;
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    if (checked) {
+      // 1. Add Log
+      await supabase.from('attendance_logs').insert({
+        student_id: studentId,
+        coach_id: session.user.id,
+        date,
+        time: new Date().toLocaleTimeString(),
+        type,
+        comment: type === 'attendance' ? '출석 체크' : '결제 체크'
+      });
+
+      // 2. Update remaining sessions if attendance
+      if (type === 'attendance') {
+        await supabase.from('students').update({
+          remaining_sessions: student.remainingSessions - 1
+        }).eq('id', studentId);
+      }
+    } else {
+      // 1. Delete Log
+      const logToDelete = logs.find(l => l.studentId === studentId && l.date === date && l.type === type);
+      if (logToDelete) {
+        await supabase.from('attendance_logs').delete().eq('id', logToDelete.id);
+        
+        // 2. Restore remaining sessions if attendance
+        if (type === 'attendance') {
+          await supabase.from('students').update({
+            remaining_sessions: student.remainingSessions + 1
+          }).eq('id', studentId);
+        }
+      }
+    }
+    fetchData();
+  };
+
   return (
     <AppContext.Provider value={{ 
-      students, logs, session, loading, addStudent, updateStudent, recordAttendance, updateLog, deleteLog, deleteStudent, confirmPayment, resetPayment, addComment
+      students, logs, session, loading, addStudent, updateStudent, recordAttendance, updateLog, deleteLog, deleteStudent, confirmPayment, resetPayment, addComment, recordGridCheck
     }}>
       {children}
     </AppContext.Provider>
