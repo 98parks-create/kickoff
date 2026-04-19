@@ -12,11 +12,49 @@
     <title>Kick-Off | 축구 레슨 관리 SaaS</title>
     <meta name="description" content="축구 코치를 위한 운영 부하 제로 관리 앱. 출석, 결제, 온보딩을 한 번에." />
     <script>
+      // Emergency Cache Reset Logic
+      const APP_VERSION = '2.0';
+      const storedVersion = localStorage.getItem('kickoff_app_version');
+      
+      if (storedVersion !== APP_VERSION) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) registration.unregister();
+          });
+        }
+        localStorage.setItem('kickoff_app_version', APP_VERSION);
+        // Force reload from server if version changed
+        if (storedVersion) window.location.reload(true);
+      }
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content available, reload.
+                  window.location.reload();
+                }
+              };
+            };
+          });
         });
       }
+
+      // Global error handler for black screen detection
+      window.onerror = function(msg, url, line) {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML === '') {
+          root.innerHTML = '<div style="color: white; padding: 2rem; text-align: center; font-family: sans-serif;">' +
+            '<h2>앱 구동 오류가 발생했습니다</h2>' +
+            '<p>브라우저 캐시 충돌이 의심됩니다.</p>' +
+            '<button onclick="localStorage.clear(); location.reload(true);" style="padding: 10px 20px; background: #22C55E; border: none; border-radius: 8px; color: black; font-weight: bold; margin-top: 1rem;">캐시 초기화 후 다시 시도</button>' +
+            '</div>';
+        }
+        return false;
+      };
     </script>
     
     <!-- Google Fonts -->

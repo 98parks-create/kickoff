@@ -43,11 +43,41 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', gap: '1.5rem' }}>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', gap: '1.5rem', padding: '2rem', textAlign: 'center' }}>
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
           <LayoutDashboard size={40} color="var(--primary)" />
         </motion.div>
-        <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>데이터를 불러오는 중입니다...</p>
+        <div>
+          <p style={{ color: '#fff', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>데이터를 불러오는 중입니다...</p>
+          <p style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>잠시만 기다려 주세요.</p>
+        </div>
+        
+        <button
+          onClick={() => {
+            if (window.confirm('앱을 초기화하고 다시 로드하시겠습니까? (캐시 문제가 해결됩니다)')) {
+              localStorage.clear();
+              sessionStorage.clear();
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                  for (let registration of registrations) registration.unregister();
+                });
+              }
+              window.location.reload();
+            }
+          }}
+          style={{ 
+            marginTop: '2rem',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '1rem',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--muted)',
+            fontSize: '0.8rem',
+            cursor: 'pointer'
+          }}
+        >
+          화면이 계속 안 나오나요? (강제 초기화)
+        </button>
       </div>
     );
   }
