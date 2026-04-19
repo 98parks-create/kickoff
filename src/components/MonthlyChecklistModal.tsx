@@ -144,7 +144,7 @@ const MonthlyChecklistModal: React.FC<Props> = ({
                              <User size={20} color="var(--primary)" />
                           </div>
                           <div>
-                             <h4 style={{ fontWeight: 800 }}>{student.name}</h4>
+                             <h4 style={{ fontWeight: 800, color: '#fff' }}>{student.name}</h4>
                              <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{student.team || '소속 없음'}</p>
                           </div>
                        </div>

@@ -42,22 +42,31 @@ const Management: React.FC = () => {
     return students
       .filter(s => s.lessonType === view)
       .map(student => {
-        const studentLogs = logs.filter(l => l.studentId === student.id && l.type === 'attendance');
+        const studentAttendLogs = logs.filter(l => l.studentId === student.id && l.type === 'attendance');
+        const studentPayLogs = logs.filter(l => l.studentId === student.id && l.type === 'payment');
         
-        // Count for the visible month (for "당월 참여")
-        const monthlyAttendanceCount = studentLogs.filter(l => {
+        // Monthly stats
+        const monthlyAttendance = studentAttendLogs.filter(l => {
+            const logDate = new Date(l.date);
+            return logDate.getMonth() === month && logDate.getFullYear() === year;
+        }).length;
+        
+        const monthlyPayment = studentPayLogs.filter(l => {
             const logDate = new Date(l.date);
             return logDate.getMonth() === month && logDate.getFullYear() === year;
         }).length;
 
-        // Count for all time (for "전체 훈련현황")
-        const totalUsed = studentLogs.length;
+        // All-time stats
+        const totalUsed = studentAttendLogs.length;
+        const totalPaidCount = studentPayLogs.length;
         const remaining = student.totalSessions - totalUsed;
 
         return {
           ...student,
-          attendanceCount: monthlyAttendanceCount,
+          attendanceCount: monthlyAttendance,
+          paymentCount: monthlyPayment,
           totalUsed,
+          totalPaidCount,
           actualRemaining: remaining
         };
       });
@@ -233,20 +242,29 @@ const Management: React.FC = () => {
                   <td>{student.team || '-'}</td>
                   <td><span className="badge badge-yellow" style={{ fontSize: '0.65rem' }}>{student.ageCategory || 'U15'}</span></td>
                   <td><span className="badge badge-green" style={{ fontSize: '0.65rem' }}>{student.inflowRoute || '소개'}</span></td>
-                  <td style={{ fontWeight: 600 }}>₩{(student.pricePerLesson || 0).toLocaleString()}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, color: 'var(--primary)', fontSize: '1.1rem' }}>{student.attendanceCount}회</td>
+                  <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <span>참여: {student.attendanceCount}회</span>
+                        <span style={{ color: 'var(--accent)', fontSize: '0.75rem' }}>결제: {student.paymentCount}회</span>
+                    </div>
+                  </td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ 
                         display: 'inline-flex', 
+                        flexDirection: 'column',
                         alignItems: 'center', 
                         gap: '0.5rem', 
                         background: student.actualRemaining <= 2 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)', 
-                        padding: '0.4rem 0.8rem', 
+                        padding: '0.6rem 1rem', 
                         borderRadius: '0.75rem',
-                        border: student.actualRemaining <= 2 ? '1px solid #EF4444' : 'none'
+                        border: student.actualRemaining <= 2 ? '1px solid #EF4444' : 'none',
+                        minWidth: '120px'
                     }}>
-                        <span style={{ color: student.actualRemaining <= 2 ? '#EF4444' : 'var(--primary)', fontWeight: 800 }}>{student.totalUsed}</span>
-                        <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>/ {student.totalSessions}회</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ color: student.actualRemaining <= 2 ? '#EF4444' : 'var(--primary)', fontWeight: 800, fontSize: '1.1rem' }}>{student.totalUsed}</span>
+                            <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>/ {student.totalSessions}회</span>
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>총 결제: {student.totalPaidCount}회</div>
                     </div>
                   </td>
                   <td>
@@ -304,21 +322,27 @@ const Management: React.FC = () => {
                   </div>
                 </div>
                 <div className="mobile-card-item">
-                  <label>당월 참여</label>
-                  <span style={{ color: 'var(--primary)' }}>{student.attendanceCount}회</span>
+                  <label>당월 참여 / 결제</label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <span style={{ color: 'var(--primary)', fontWeight: 700 }}>참여: {student.attendanceCount}</span>
+                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>결제: {student.paymentCount}</span>
+                  </div>
                 </div>
                 <div className="mobile-card-item" style={{ gridColumn: 'span 2' }}>
-                  <label>전체 훈련 현황</label>
+                  <label>전체 훈련 현황 및 결제</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
                     <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ 
-                            width: `${(student.totalUsed / student.totalSessions) * 100}%`, 
+                            width: `${Math.min(100, (student.totalUsed / student.totalSessions) * 100)}%`, 
                             height: '100%', 
                             background: 'var(--primary)',
                             borderRadius: '3px'
                         }}></div>
                     </div>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{student.totalUsed} <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--muted)' }}>/ {student.totalSessions}회</span></span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{student.totalUsed} <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--muted)' }}>/ {student.totalSessions}회</span></span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>총 결제: {student.totalPaidCount}회</span>
+                    </div>
                   </div>
                 </div>
               </div>
