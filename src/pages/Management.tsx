@@ -47,15 +47,23 @@ const Management: React.FC = () => {
     return students
       .filter(s => s.lessonType === view)
       .map(student => {
-        const studentLogs = monthLogs.filter(l => l.studentId === student.id);
+        const studentLogs = logs.filter(l => l.studentId === student.id && l.type === 'attendance');
         
-        const attendanceCount = studentLogs.filter(l => l.type === 'attendance').length;
-        const totalUsed = (student.totalSessions - student.remainingSessions);
+        // Count for the visible month (for "당월 참여")
+        const monthlyAttendanceCount = studentLogs.filter(l => {
+            const logDate = new Date(l.date);
+            return logDate.getMonth() === month && logDate.getFullYear() === year;
+        }).length;
+
+        // Count for all time (for "전체 훈련현황")
+        const totalUsed = studentLogs.length;
+        const remaining = student.totalSessions - totalUsed;
 
         return {
           ...student,
-          attendanceCount, // Monthly count
-          totalUsed // Cumulative used from total
+          attendanceCount: monthlyAttendanceCount,
+          totalUsed,
+          actualRemaining: remaining
         };
       });
   }, [students, logs, month, year, view]);
@@ -164,7 +172,7 @@ const Management: React.FC = () => {
 
       {/* Re-registration Alert */}
       <AnimatePresence>
-        {students.some(s => s.remainingSessions <= 2) && (
+        {gridData.some(s => s.actualRemaining <= 2) && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -233,8 +241,16 @@ const Management: React.FC = () => {
                   <td style={{ fontWeight: 600 }}>₩{(student.pricePerLesson || 0).toLocaleString()}</td>
                   <td style={{ textAlign: 'center', fontWeight: 700, color: 'var(--primary)', fontSize: '1.1rem' }}>{student.attendanceCount}회</td>
                   <td style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '0.75rem' }}>
-                        <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{student.totalUsed}</span>
+                    <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem', 
+                        background: student.actualRemaining <= 2 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)', 
+                        padding: '0.4rem 0.8rem', 
+                        borderRadius: '0.75rem',
+                        border: student.actualRemaining <= 2 ? '1px solid #EF4444' : 'none'
+                    }}>
+                        <span style={{ color: student.actualRemaining <= 2 ? '#EF4444' : 'var(--primary)', fontWeight: 800 }}>{student.totalUsed}</span>
                         <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>/ {student.totalSessions}회</span>
                     </div>
                   </td>
@@ -312,7 +328,7 @@ const Management: React.FC = () => {
                 </div>
               </div>
 
-              {student.remainingSessions <= 2 && (
+              {student.actualRemaining <= 2 && (
                 <div className="mobile-card-footer" style={{ border: 'none', padding: 0 }}>
                     <span className="badge badge-red" style={{ animation: 'pulse 2s infinite', width: '100%', textAlign: 'center', padding: '0.5rem' }}>잔여 2회 이하 - 재등록 안내 대상</span>
                 </div>
