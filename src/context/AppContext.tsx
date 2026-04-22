@@ -42,7 +42,7 @@ export interface AttendanceLog {
 export interface Schedule {
   id: string;
   coach_id: string;
-  student_id?: string;
+  student_id?: string | null;
   date: string;
   time?: string;
   title: string;
