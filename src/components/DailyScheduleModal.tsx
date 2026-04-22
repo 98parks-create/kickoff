@@ -69,14 +69,30 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 1. Show local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ ...prev, image_urls: [...prev.image_urls, localUrl] }));
+
     setLoading(true);
     try {
-      const url = await uploadScheduleImage(file);
-      if (url) {
-        setFormData(prev => ({ ...prev, image_urls: [...prev.image_urls, url] }));
+      const remoteUrl = await uploadScheduleImage(file);
+      if (remoteUrl) {
+        // 2. Replace local preview with remote URL once uploaded
+        setFormData(prev => ({
+          ...prev,
+          image_urls: prev.image_urls.map(url => url === localUrl ? remoteUrl : url)
+        }));
+      } else {
+        // Remove local preview if upload fails
+        setFormData(prev => ({
+          ...prev,
+          image_urls: prev.image_urls.filter(url => url !== localUrl)
+        }));
+        alert('이미지 업로드에 실패했습니다.');
       }
     } finally {
       setLoading(false);
+      URL.revokeObjectURL(localUrl); // Cleanup
     }
   };
 
@@ -134,21 +150,31 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
   const handleShare = async (schedule: Schedule) => {
     const student = students.find(s => s.id === schedule.student_id);
     const imageUrls = schedule.image_url ? schedule.image_url.split(',') : [];
-    const imagesText = imageUrls.length > 0 ? `\n\n사진: ${imageUrls.join('\n')}` : '';
-    const shareText = `[Kick-Off 레슨 일지]\n\n선수: ${student ? student.name : '미지정'}\n날짜: ${format(new Date(schedule.date), 'yyyy년 M월 d일')}\n시간: ${schedule.time || '미지정'}\n제목: ${schedule.title}\n내용: ${schedule.description || '-'}\n\n코치 코멘트: ${schedule.comment || '-'}${imagesText}`;
     
+    // Format text nicely for sharing
+    let shareText = `[Kick-Off 레슨 일지]\n\n`;
+    shareText += `선수: ${student ? student.name : '미지정'}\n`;
+    shareText += `날짜: ${format(new Date(schedule.date), 'yyyy년 M월 d일')}\n`;
+    if (schedule.time) shareText += `시간: ${schedule.time}\n`;
+    shareText += `제목: ${schedule.title}\n`;
+    if (schedule.description) shareText += `내용: ${schedule.description}\n`;
+    if (schedule.comment) shareText += `\n코치 코멘트:\n${schedule.comment}\n`;
+    
+    if (imageUrls.length > 0) {
+      shareText += `\n훈련 사진:\n${imageUrls.join('\n')}`;
+    }
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: '레슨 일정 및 피드백',
           text: shareText,
-          url: imageUrls[0] || window.location.href,
+          // No URL here to avoid sending the app link
         });
       } catch (err) {
         console.log('Sharing failed', err);
       }
     } else {
-      // Fallback: Copy to clipboard
       await navigator.clipboard.writeText(shareText);
       alert('내용이 클립보드에 복사되었습니다. 카카오톡 등 원하는 곳에 붙여넣으세요.');
     }
