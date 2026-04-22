@@ -175,10 +175,10 @@ body {
 }
 
 main {
-  padding: 1.5rem 1.5rem 6rem;
+  padding: 1.5rem 1rem 6rem;
   max-width: 1200px;
   margin: 0 auto;
-  width: 95%;
+  width: 100%;
 }
 
 h1, h2, h3 {
@@ -249,6 +249,17 @@ button:active {
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-top: 2rem;
+}
+
+@media (max-width: 600px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  main {
+    padding: 1rem 0.75rem 6rem;
+  }
 }
 
 .detail-item label {

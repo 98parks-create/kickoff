@@ -178,8 +178,23 @@ const Calendar: React.FC = () => {
             width: 100%;
             justify-content: space-between;
           }
+          section.glass {
+            padding: 0.75rem !important;
+            margin: 0 -0.25rem;
+          }
+          div[style*="grid-template-columns: repeat(7, 1fr)"] {
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+            gap: 0.25rem !important;
+          }
           div[style*="min-height: 100px"] {
-            min-height: 70px !important;
+            min-height: 60px !important;
+            padding: 0.25rem !important;
+          }
+          div[style*="font-size: 0.9rem"] {
+            font-size: 0.75rem !important;
+          }
+          .nav-btn {
+            padding: 0.25rem;
           }
         }
       `}</style>

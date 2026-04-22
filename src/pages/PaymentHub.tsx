@@ -207,7 +207,28 @@ const PaymentHub: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    <style>{`
+      @media (max-width: 600px) {
+        .payment-hub header h1 {
+          font-size: 1.5rem !important;
+        }
+        .payment-hub .premium-card {
+          padding: 1rem !important;
+        }
+        .payment-hub .premium-card > div:first-child {
+          flex-direction: column;
+          align-items: stretch !important;
+          gap: 1rem !important;
+        }
+        .payment-hub .premium-card > div:first-child > div:last-child {
+          text-align: left !important;
+          justify-content: space-between;
+          width: 100%;
+          gap: 1rem !important;
+        }
+      }
+    `}</style>
+  </div>
   );
 };
 

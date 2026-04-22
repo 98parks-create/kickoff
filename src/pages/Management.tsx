@@ -533,6 +533,14 @@ const Management: React.FC = () => {
           .filter-search-container {
             flex-direction: column;
             align-items: stretch !important;
+            gap: 0.75rem !important;
+          }
+          .filter-search-container .glass {
+            min-width: unset !important;
+            width: 100%;
+          }
+          .management-page header h1 {
+            font-size: 1.5rem !important;
           }
         }
 

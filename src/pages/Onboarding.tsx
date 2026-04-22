@@ -128,7 +128,7 @@ const Onboarding: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="onboarding-grid">
                   <div>
                     <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>연락처</label>
                     <input 
@@ -153,7 +153,7 @@ const Onboarding: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="onboarding-grid">
                   <div className="glass">
                     <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>연령별 카테고리</label>
                     <select 
@@ -183,7 +183,7 @@ const Onboarding: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="onboarding-grid">
                   <div className="glass">
                     <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>포지션</label>
                     <select 
@@ -246,7 +246,7 @@ const Onboarding: React.FC = () => {
           </AnimatePresence>
 
           {/* Shared Footer Fields: Price, Sessions, Location */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="onboarding-grid">
             <div className="glass">
               <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem', display: 'block' }}>레슨 유형</label>
               <select 
@@ -302,6 +302,25 @@ const Onboarding: React.FC = () => {
           <ArrowRight size={20} />
         </button>
       </form>
+      <style>{`
+        .onboarding-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+        @media (max-width: 600px) {
+          .onboarding-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+          }
+          .premium-card {
+            padding: 1rem;
+          }
+          .onboarding {
+            padding: 0.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

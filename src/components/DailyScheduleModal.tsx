@@ -304,7 +304,7 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
               </select>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <div className="modal-grid-row">
               <div className="detail-item">
                 <label><Clock size={14} /> 시간</label>
                 <input 
@@ -438,6 +438,20 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
       </motion.div>
 
       <style>{`
+        .modal-grid-row {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 1rem;
+        }
+        @media (max-width: 600px) {
+          .modal-grid-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+          .modal-content {
+            padding: 1.25rem !important;
+          }
+        }
         .animate-spin {
           animation: spin 1s linear infinite;
         }
