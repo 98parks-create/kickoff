@@ -39,9 +39,23 @@ export interface AttendanceLog {
   type?: 'attendance' | 'payment'; // NEW
 }
 
+export interface Schedule {
+  id: string;
+  coach_id: string;
+  student_id?: string;
+  date: string;
+  time?: string;
+  title: string;
+  description?: string;
+  image_url?: string;
+  comment?: string;
+  created_at: string;
+}
+
 interface AppContextType {
   students: Student[];
   logs: AttendanceLog[];
+  schedules: Schedule[];
   session: Session | null;
   loading: boolean;
   addStudent: (student: Omit<Student, 'id' | 'coach_id' | 'joinedDate'>) => Promise<void>;
@@ -54,6 +68,11 @@ interface AppContextType {
   resetPayment: (studentId: string) => Promise<void>;
   addComment: (studentId: string, comment: string) => Promise<void>;
   recordGridCheck: (studentId: string, date: string, type: 'attendance' | 'payment', checked: boolean) => Promise<void>;
+  // Schedule functions
+  addSchedule: (schedule: Omit<Schedule, 'id' | 'coach_id' | 'created_at'>) => Promise<void>;
+  updateSchedule: (schedule: Schedule) => Promise<void>;
+  deleteSchedule: (scheduleId: string) => Promise<void>;
+  uploadScheduleImage: (file: File) => Promise<string | null>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -63,6 +82,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   useEffect(() => {
     let cleanupSubs: (() => void) | null = null;
@@ -125,9 +145,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }, () => fetchData())
       .subscribe();
 
+    const scheduleSub = supabase
+      .channel(`schedules-${userId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'schedules',
+        filter: `coach_id=eq.${userId}`
+      }, () => fetchData())
+      .subscribe();
+
     return () => {
       supabase.removeChannel(studentSub);
       supabase.removeChannel(logSub);
+      supabase.removeChannel(scheduleSub);
     };
   };
 
@@ -157,8 +188,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .eq('coach_id', currentSession.user.id)
         .order('created_at', { ascending: false });
 
+      const { data: schedulesData, error: schError } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('coach_id', currentSession.user.id)
+        .order('date', { ascending: true });
+
       if (sError) console.error('Student fetch error:', sError);
       if (lError) console.error('Logs fetch error:', lError);
+      if (schError) console.error('Schedules fetch error:', schError);
       
       if (studentsData) {
         setStudents(studentsData.map(s => ({
@@ -181,6 +219,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (logsData) {
         setLogs(logsData.map(l => ({ ...l, studentId: l.student_id, isInjury: l.is_injury })));
+      }
+
+      if (schedulesData) {
+        setSchedules(schedulesData);
       }
     } catch (err) {
       console.error('Data fetch failed:', err);
@@ -432,9 +474,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchData();
   };
 
+  const addSchedule = async (scheduleData: Omit<Schedule, 'id' | 'coach_id' | 'created_at'>) => {
+    if (!session) return;
+    const { error } = await supabase.from('schedules').insert({
+      coach_id: session.user.id,
+      ...scheduleData
+    });
+    if (!error) fetchData();
+  };
+
+  const updateSchedule = async (updatedSchedule: Schedule) => {
+    const { id, coach_id, created_at, ...updateData } = updatedSchedule;
+    await supabase.from('schedules').update(updateData).eq('id', id);
+    fetchData();
+  };
+
+  const deleteSchedule = async (scheduleId: string) => {
+    await supabase.from('schedules').delete().eq('id', scheduleId);
+    fetchData();
+  };
+
+  const uploadScheduleImage = async (file: File) => {
+    if (!session) return null;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('schedule-images')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('schedule-images')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   return (
     <AppContext.Provider value={{ 
-      students, logs, session, loading, addStudent, updateStudent, recordAttendance, updateLog, deleteLog, deleteStudent, confirmPayment, resetPayment, addComment, recordGridCheck
+      students, logs, schedules, session, loading, addStudent, updateStudent, recordAttendance, updateLog, deleteLog, deleteStudent, confirmPayment, resetPayment, addComment, recordGridCheck,
+      addSchedule, updateSchedule, deleteSchedule, uploadScheduleImage
     }}>
       {children}
     </AppContext.Provider>

@@ -6,8 +6,9 @@ import Management from './pages/Management';
 import Login from './pages/Login';
 import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, LogOut, LayoutList, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, LogOut, LayoutList, AlertTriangle, Calendar as CalendarIcon } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
+import Calendar from './pages/Calendar.tsx';
 
 const Navbar = () => {
   return (
@@ -29,6 +30,9 @@ const Navbar = () => {
       </NavLink>
       <NavLink to="/onboarding" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <Users size={24} />
+      </NavLink>
+      <NavLink to="/calendar" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        <CalendarIcon size={24} />
       </NavLink>
       <NavLink to="/payments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <CreditCard size={24} />
@@ -140,6 +144,7 @@ function App() {
       <Route path="/" element={<AuthWrapper><Management /></AuthWrapper>} />
       <Route path="/management" element={<Navigate to="/" replace />} />
       <Route path="/onboarding" element={<AuthWrapper><Onboarding /></AuthWrapper>} />
+      <Route path="/calendar" element={<AuthWrapper><Calendar /></AuthWrapper>} />
       <Route path="/payments" element={<AuthWrapper><PaymentHub /></AuthWrapper>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
