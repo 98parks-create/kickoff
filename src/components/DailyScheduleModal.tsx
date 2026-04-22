@@ -36,7 +36,7 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
     title: '',
     description: '',
     comment: '',
-    image_url: ''
+    image_urls: [] as string[]
   });
 
   const daySchedules = schedules.filter(s => s.date === format(date, 'yyyy-MM-dd'));
@@ -48,7 +48,7 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
       title: '',
       description: '',
       comment: '',
-      image_url: ''
+      image_urls: []
     });
     setIsAdding(true);
   };
@@ -60,7 +60,7 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
       title: schedule.title,
       description: schedule.description || '',
       comment: schedule.comment || '',
-      image_url: schedule.image_url || ''
+      image_urls: schedule.image_url ? schedule.image_url.split(',') : []
     });
     setEditingId(schedule.id);
   };
@@ -73,11 +73,18 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
     try {
       const url = await uploadScheduleImage(file);
       if (url) {
-        setFormData(prev => ({ ...prev, image_url: url }));
+        setFormData(prev => ({ ...prev, image_urls: [...prev.image_urls, url] }));
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      image_urls: prev.image_urls.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSave = async () => {
@@ -90,22 +97,29 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
     try {
       const scheduleData = {
         ...formData,
+        student_id: formData.student_id || null,
         date: format(date, 'yyyy-MM-dd'),
+        image_url: formData.image_urls.join(',') // Store as comma-separated string
       };
+
+      console.log('Saving schedule data:', scheduleData);
+      // Remove image_urls from the data sent to Supabase as it's not in the schema
+      const { image_urls, ...finalData } = scheduleData;
 
       if (editingId) {
         const original = schedules.find(s => s.id === editingId);
         if (original) {
-          await updateSchedule({ ...original, ...scheduleData });
+          await updateSchedule({ ...original, ...finalData });
         }
       } else {
-        await addSchedule(scheduleData);
+        await addSchedule(finalData as any);
       }
       
       setIsAdding(false);
       setEditingId(null);
     } catch (err) {
       console.error('Save failed:', err);
+      alert('저장에 실패했습니다. 콘솔 로그를 확인해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -119,14 +133,16 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
 
   const handleShare = async (schedule: Schedule) => {
     const student = students.find(s => s.id === schedule.student_id);
-    const shareText = `[Kick-Off 레슨 일지]\n\n선수: ${student ? student.name : '미지정'}\n날짜: ${format(new Date(schedule.date), 'yyyy년 M월 d일')}\n시간: ${schedule.time || '미지정'}\n제목: ${schedule.title}\n내용: ${schedule.description || '-'}\n\n코치 코멘트: ${schedule.comment || '-'}`;
+    const imageUrls = schedule.image_url ? schedule.image_url.split(',') : [];
+    const imagesText = imageUrls.length > 0 ? `\n\n사진: ${imageUrls.join('\n')}` : '';
+    const shareText = `[Kick-Off 레슨 일지]\n\n선수: ${student ? student.name : '미지정'}\n날짜: ${format(new Date(schedule.date), 'yyyy년 M월 d일')}\n시간: ${schedule.time || '미지정'}\n제목: ${schedule.title}\n내용: ${schedule.description || '-'}\n\n코치 코멘트: ${schedule.comment || '-'}${imagesText}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: '레슨 일정 및 피드백',
           text: shareText,
-          url: schedule.image_url || window.location.href,
+          url: imageUrls[0] || window.location.href,
         });
       } catch (err) {
         console.log('Sharing failed', err);
@@ -195,8 +211,12 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
                   )}
 
                   {schedule.image_url && (
-                    <div style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', marginBottom: '1rem', aspectRatio: '16/9' }}>
-                      <img src={schedule.image_url} alt="훈련 사진" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: schedule.image_url.split(',').length > 1 ? 'repeat(2, 1fr)' : '1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                      {schedule.image_url.split(',').map((url, idx) => (
+                        <div key={idx} style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', aspectRatio: '16/9' }}>
+                          <img src={url} alt={`훈련 사진 ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -304,15 +324,19 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
                   </div>
                 )}
 
-                {formData.image_url && (
-                  <div style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', aspectRatio: '16/9' }}>
-                    <img src={formData.image_url} alt="미리보기" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button 
-                      onClick={() => setFormData({ ...formData, image_url: '' })}
-                      style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.5)', border: 'none', padding: '0.5rem', borderRadius: '50%', color: '#fff' }}
-                    >
-                      <X size={16} />
-                    </button>
+                {formData.image_urls.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                    {formData.image_urls.map((url, idx) => (
+                      <div key={idx} style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', aspectRatio: '16/9' }}>
+                        <img src={url} alt={`미리보기 ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button 
+                          onClick={() => removeImage(idx)}
+                          style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.5)', border: 'none', padding: '0.5rem', borderRadius: '50%', color: '#fff' }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

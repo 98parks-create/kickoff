@@ -480,18 +480,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       coach_id: session.user.id,
       ...scheduleData
     });
-    if (!error) fetchData();
+    if (error) console.error('Add schedule error:', error);
+    else fetchData();
   };
 
   const updateSchedule = async (updatedSchedule: Schedule) => {
     const { id, coach_id, created_at, ...updateData } = updatedSchedule;
-    await supabase.from('schedules').update(updateData).eq('id', id);
-    fetchData();
+    const { error } = await supabase.from('schedules').update(updateData).eq('id', id);
+    if (error) console.error('Update schedule error:', error);
+    else fetchData();
   };
 
   const deleteSchedule = async (scheduleId: string) => {
-    await supabase.from('schedules').delete().eq('id', scheduleId);
-    fetchData();
+    const { error } = await supabase.from('schedules').delete().eq('id', scheduleId);
+    if (error) console.error('Delete schedule error:', error);
+    else fetchData();
   };
 
   const uploadScheduleImage = async (file: File) => {
