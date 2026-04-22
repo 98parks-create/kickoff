@@ -237,10 +237,28 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
                   )}
 
                   {schedule.image_url && (
-                    <div style={{ display: 'grid', gridTemplateColumns: schedule.image_url.split(',').length > 1 ? 'repeat(2, 1fr)' : '1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: schedule.image_url.split(',').length > 1 ? 'repeat(2, 1fr)' : '1fr', gap: '0.8rem', marginBottom: '1.2rem' }}>
                       {schedule.image_url.split(',').map((url, idx) => (
-                        <div key={idx} style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', aspectRatio: '16/9' }}>
-                          <img src={url} alt={`훈련 사진 ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div key={idx} style={{ 
+                          position: 'relative', 
+                          borderRadius: '1rem', 
+                          overflow: 'hidden', 
+                          background: 'rgba(0,0,0,0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minHeight: '200px'
+                        }}>
+                          <img 
+                            src={url} 
+                            alt={`훈련 사진 ${idx + 1}`} 
+                            style={{ 
+                              width: '100%', 
+                              height: 'auto', 
+                              maxHeight: '400px',
+                              objectFit: 'contain' // Prevent stretching/cropping
+                            }} 
+                          />
                         </div>
                       ))}
                     </div>
@@ -351,13 +369,31 @@ const DailyScheduleModal: React.FC<DailyScheduleModalProps> = ({ onClose, date }
                 )}
 
                 {formData.image_urls.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.8rem' }}>
                     {formData.image_urls.map((url, idx) => (
-                      <div key={idx} style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', aspectRatio: '16/9' }}>
-                        <img src={url} alt={`미리보기 ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div key={idx} style={{ 
+                        position: 'relative', 
+                        borderRadius: '1rem', 
+                        overflow: 'hidden', 
+                        background: 'rgba(0,0,0,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '150px'
+                      }}>
+                        <img 
+                          src={url} 
+                          alt={`미리보기 ${idx + 1}`} 
+                          style={{ 
+                            width: '100%', 
+                            height: 'auto', 
+                            maxHeight: '300px',
+                            objectFit: 'contain' 
+                          }} 
+                        />
                         <button 
                           onClick={() => removeImage(idx)}
-                          style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.5)', border: 'none', padding: '0.5rem', borderRadius: '50%', color: '#fff' }}
+                          style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.5)', border: 'none', padding: '0.5rem', borderRadius: '50%', color: '#fff', zIndex: 10 }}
                         >
                           <X size={16} />
                         </button>
